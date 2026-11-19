@@ -1,0 +1,7 @@
+#
+# Dictionary 支持 stringDict, intDict, longDict, floatDict
+# key, value 不能包含 ; 和 =
+# [enc] 支持 int, long, float
+#
+
+int curLevel entity GameDataConfig.DefaultPlayerLevel [enc]

@@ -1,0 +1,96 @@
+﻿public static class GameDataConfig
+{
+    /// <summary>首次游戏或重置关卡进度时使用的关卡编号。</summary>
+    public const int DefaultPlayerLevel = 1;
+    /// <summary>新建怪物时的默认移动速度。</summary>
+    public const float DefaultMonsterSpeed = 1f;
+    /// <summary>新建关卡时的默认网格列数。</summary>
+    public const int DefaultLevelWidth = 10;
+    /// <summary>新建关卡时的默认网格行数。</summary>
+    public const int DefaultLevelHeight = 10;
+    /// <summary>关卡网格的行数和列数各自允许的最小值。</summary>
+    public const int MinLevelGridSize = 1;
+    /// <summary>关卡网格的行数和列数各自允许的最大值。</summary>
+    public const int MaxLevelGridSize = 1024;
+    /// <summary>场景元素至少覆盖格子的这么大比例，该格才算被占用。</summary>
+    public const float SceneElementOccupancyThreshold = 0.2f;
+    public const float SceneElementDefaultSizeInCells = 5f / 6f;
+
+    /// <summary>关卡网格中可放置的场景元素类型。</summary>
+    public enum SceneElement
+    {
+        /// <summary>空格子，无场景元素。</summary>
+        None = 0,
+        /// <summary>开花的灌木。</summary>
+        FloweringBush = 1,
+        /// <summary>红浆果灌木。</summary>
+        RedBerryBush = 2,
+        /// <summary>蓝浆果灌木。</summary>
+        BlueBerryBush = 3,
+        /// <summary>阔叶植物。</summary>
+        LeafyPlant = 4,
+        /// <summary>草丛。</summary>
+        Grass = 5,
+        /// <summary>白色花丛。</summary>
+        WhiteFlowers = 6,
+        /// <summary>黄色花丛。</summary>
+        YellowFlowers = 7,
+        /// <summary>紫色水晶簇。</summary>
+        PurpleCrystals = 8,
+        /// <summary>蘑菇群。</summary>
+        Mushrooms = 9,
+        /// <summary>覆有苔藓的巨石。</summary>
+        MossyBoulder = 10,
+        /// <summary>裂缝发光的岩石。</summary>
+        GlowingCrackedRock = 11,
+        /// <summary>长有水晶的巨石。</summary>
+        CrystalBoulder = 12,
+        /// <summary>岩石群。</summary>
+        RockCluster = 13,
+        /// <summary>覆有苔藓的岩石堆。</summary>
+        MossyRockStack = 14,
+        /// <summary>高耸的岩石。</summary>
+        TallRocks = 15,
+        /// <summary>大型水晶巨石。</summary>
+        LargeCrystalBoulder = 16,
+        /// <summary>树桩。</summary>
+        TreeStump = 17,
+        /// <summary>断裂的树桩。</summary>
+        BrokenTreeStump = 18,
+        /// <summary>绿叶阔叶树。</summary>
+        GreenBroadleafTree = 19,
+        /// <summary>金黄色的秋树。</summary>
+        AutumnTree = 20,
+        /// <summary>粉色开花树。</summary>
+        PinkBlossomTree = 21,
+        /// <summary>覆雪的针叶树。</summary>
+        SnowyPineTree = 22,
+        /// <summary>常绿针叶树。</summary>
+        PineTree = 23,
+        /// <summary>蓝色发光树。</summary>
+        GlowingBlueTree = 24,
+
+        // geology.png uses four variants each of grass, dirt, stone and mossy dirt.
+        GrassTile1 = 25,
+        GrassTile2 = 26,
+        GrassTile3 = 27,
+        GrassTile4 = 28,
+        DirtTile1 = 29,
+        DirtTile2 = 30,
+        DirtTile3 = 31,
+        DirtTile4 = 32,
+        StoneTile1 = 33,
+        StoneTile2 = 34,
+        StoneTile3 = 35,
+        StoneTile4 = 36,
+        MossyDirtTile1 = 37,
+        MossyDirtTile2 = 38,
+        MossyDirtTile3 = 39,
+        MossyDirtTile4 = 40
+    }
+
+    public static bool IsGeology(SceneElement element)
+    {
+        return element >= SceneElement.GrassTile1 && element <= SceneElement.MossyDirtTile4;
+    }
+}

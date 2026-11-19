@@ -1,0 +1,1050 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1901920aa57546cf90ce259fe09da22d, type: 3}
+  m_Name: Level_1
+  m_EditorClassIdentifier: 
+  width: 11
+  height: 12
+  sceneElements:
+  - cell: {x: 1, y: 4}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 2, y: 4}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 3, y: 4}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 4, y: 4}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 1, y: 5}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 3, y: 6}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 2, y: 8}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 3, y: 8}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 4, y: 8}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 5, y: 8}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 6, y: 8}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 7, y: 8}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 1, y: 8}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 2, y: 4}
+    element: 24
+    scale: 2.475963
+    hasBakedOccupancy: 1
+    occupiedCells:
+    - {x: 0, y: -1}
+    - {x: 0, y: 0}
+    - {x: 0, y: 1}
+  - cell: {x: 1, y: 1}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 2, y: 1}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 3, y: 1}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 4, y: 1}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 5, y: 1}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 6, y: 1}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 7, y: 1}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 8, y: 1}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 9, y: 1}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 9, y: 2}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 8, y: 2}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 7, y: 2}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 6, y: 2}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 5, y: 2}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 4, y: 2}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 3, y: 2}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 2, y: 2}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 1, y: 2}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 1, y: 3}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 2, y: 3}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 3, y: 3}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 4, y: 3}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 5, y: 3}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 6, y: 3}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 7, y: 3}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 8, y: 3}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 9, y: 3}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 9, y: 4}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 8, y: 4}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 7, y: 4}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 6, y: 4}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 5, y: 4}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 5, y: 5}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 6, y: 5}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 7, y: 5}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 8, y: 5}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 9, y: 5}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 9, y: 6}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 8, y: 6}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 4, y: 5}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 3, y: 5}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 2, y: 5}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 1, y: 6}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 2, y: 6}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 4, y: 6}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 5, y: 6}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 6, y: 6}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 7, y: 6}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 8, y: 7}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 9, y: 7}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 7, y: 7}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 6, y: 7}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 5, y: 7}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 4, y: 7}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 3, y: 7}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 2, y: 7}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 1, y: 7}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 8, y: 8}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 9, y: 8}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 9, y: 9}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 8, y: 9}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 7, y: 9}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 6, y: 9}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 5, y: 9}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 4, y: 9}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 3, y: 9}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 2, y: 9}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 1, y: 9}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 1, y: 10}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 2, y: 10}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 3, y: 10}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 4, y: 10}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 5, y: 10}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 6, y: 10}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 7, y: 10}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 8, y: 10}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 9, y: 10}
+    element: 25
+    scale: 0
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 2, y: 2}
+    element: 3
+    scale: 1
+    hasBakedOccupancy: 1
+    occupiedCells:
+    - {x: 0, y: 0}
+  - cell: {x: 3, y: 2}
+    element: 3
+    scale: 1
+    hasBakedOccupancy: 1
+    occupiedCells:
+    - {x: 0, y: 0}
+  - cell: {x: 4, y: 2}
+    element: 3
+    scale: 1
+    hasBakedOccupancy: 1
+    occupiedCells:
+    - {x: 0, y: 0}
+  - cell: {x: 5, y: 4}
+    element: 3
+    scale: 1
+    hasBakedOccupancy: 1
+    occupiedCells:
+    - {x: 0, y: 0}
+  - cell: {x: 6, y: 4}
+    element: 3
+    scale: 1
+    hasBakedOccupancy: 1
+    occupiedCells:
+    - {x: 0, y: 0}
+  - cell: {x: 7, y: 4}
+    element: 3
+    scale: 1
+    hasBakedOccupancy: 1
+    occupiedCells:
+    - {x: 0, y: 0}
+  - cell: {x: 8, y: 4}
+    element: 3
+    scale: 1
+    hasBakedOccupancy: 1
+    occupiedCells:
+    - {x: 0, y: 0}
+  - cell: {x: 8, y: 5}
+    element: 3
+    scale: 1
+    hasBakedOccupancy: 1
+    occupiedCells:
+    - {x: 0, y: 0}
+  - cell: {x: 8, y: 6}
+    element: 3
+    scale: 1
+    hasBakedOccupancy: 1
+    occupiedCells:
+    - {x: 0, y: 0}
+  - cell: {x: 8, y: 7}
+    element: 3
+    scale: 1
+    hasBakedOccupancy: 1
+    occupiedCells:
+    - {x: 0, y: 0}
+  - cell: {x: 3, y: 6}
+    element: 11
+    scale: 1
+    hasBakedOccupancy: 1
+    occupiedCells:
+    - {x: 0, y: 0}
+  - cell: {x: 4, y: 6}
+    element: 11
+    scale: 1
+    hasBakedOccupancy: 1
+    occupiedCells:
+    - {x: 0, y: 0}
+  - cell: {x: 5, y: 6}
+    element: 11
+    scale: 1
+    hasBakedOccupancy: 1
+    occupiedCells:
+    - {x: 0, y: 0}
+  - cell: {x: 6, y: 1}
+    element: 11
+    scale: 1
+    hasBakedOccupancy: 1
+    occupiedCells:
+    - {x: 0, y: 0}
+  - cell: {x: 6, y: 2}
+    element: 11
+    scale: 1
+    hasBakedOccupancy: 1
+    occupiedCells:
+    - {x: 0, y: 0}
+  - cell: {x: 1, y: 6}
+    element: 11
+    scale: 1
+    hasBakedOccupancy: 1
+    occupiedCells:
+    - {x: 0, y: 0}
+  - cell: {x: 2, y: 8}
+    element: 12
+    scale: 1.5
+    hasBakedOccupancy: 1
+    occupiedCells:
+    - {x: 0, y: 0}
+  - cell: {x: 3, y: 8}
+    element: 12
+    scale: 1.1957908
+    hasBakedOccupancy: 1
+    occupiedCells:
+    - {x: 0, y: 0}
+  - cell: {x: 0, y: 0}
+    element: 10
+    scale: 1
+    hasBakedOccupancy: 1
+    occupiedCells:
+    - {x: 0, y: 0}
+  - cell: {x: 1, y: 0}
+    element: 10
+    scale: 1
+    hasBakedOccupancy: 1
+    occupiedCells:
+    - {x: 0, y: 0}
+  - cell: {x: 2, y: 0}
+    element: 10
+    scale: 1
+    hasBakedOccupancy: 1
+    occupiedCells:
+    - {x: 0, y: 0}
+  - cell: {x: 3, y: 0}
+    element: 10
+    scale: 1
+    hasBakedOccupancy: 1
+    occupiedCells:
+    - {x: 0, y: 0}
+  - cell: {x: 4, y: 0}
+    element: 10
+    scale: 1
+    hasBakedOccupancy: 1
+    occupiedCells:
+    - {x: 0, y: 0}
+  - cell: {x: 5, y: 0}
+    element: 10
+    scale: 1
+    hasBakedOccupancy: 1
+    occupiedCells:
+    - {x: 0, y: 0}
+  - cell: {x: 6, y: 0}
+    element: 10
+    scale: 1
+    hasBakedOccupancy: 1
+    occupiedCells:
+    - {x: 0, y: 0}
+  - cell: {x: 7, y: 0}
+    element: 10
+    scale: 1
+    hasBakedOccupancy: 1
+    occupiedCells:
+    - {x: 0, y: 0}
+  - cell: {x: 8, y: 0}
+    element: 10
+    scale: 1
+    hasBakedOccupancy: 1
+    occupiedCells:
+    - {x: 0, y: 0}
+  - cell: {x: 9, y: 0}
+    element: 10
+    scale: 1
+    hasBakedOccupancy: 1
+    occupiedCells:
+    - {x: 0, y: 0}
+  - cell: {x: 10, y: 0}
+    element: 10
+    scale: 1
+    hasBakedOccupancy: 1
+    occupiedCells:
+    - {x: 0, y: 0}
+  - cell: {x: 10, y: 1}
+    element: 10
+    scale: 1
+    hasBakedOccupancy: 1
+    occupiedCells:
+    - {x: 0, y: 0}
+  - cell: {x: 10, y: 2}
+    element: 10
+    scale: 1
+    hasBakedOccupancy: 1
+    occupiedCells:
+    - {x: 0, y: 0}
+  - cell: {x: 10, y: 3}
+    element: 10
+    scale: 1
+    hasBakedOccupancy: 1
+    occupiedCells:
+    - {x: 0, y: 0}
+  - cell: {x: 10, y: 4}
+    element: 10
+    scale: 1
+    hasBakedOccupancy: 1
+    occupiedCells:
+    - {x: 0, y: 0}
+  - cell: {x: 10, y: 9}
+    element: 10
+    scale: 1
+    hasBakedOccupancy: 1
+    occupiedCells:
+    - {x: 0, y: 0}
+  - cell: {x: 10, y: 8}
+    element: 10
+    scale: 1
+    hasBakedOccupancy: 1
+    occupiedCells:
+    - {x: 0, y: 0}
+  - cell: {x: 10, y: 7}
+    element: 10
+    scale: 1
+    hasBakedOccupancy: 1
+    occupiedCells:
+    - {x: 0, y: 0}
+  - cell: {x: 10, y: 6}
+    element: 10
+    scale: 1
+    hasBakedOccupancy: 1
+    occupiedCells:
+    - {x: 0, y: 0}
+  - cell: {x: 10, y: 5}
+    element: 10
+    scale: 1
+    hasBakedOccupancy: 1
+    occupiedCells:
+    - {x: 0, y: 0}
+  - cell: {x: 10, y: 10}
+    element: 10
+    scale: 1
+    hasBakedOccupancy: 1
+    occupiedCells:
+    - {x: 0, y: 0}
+  - cell: {x: 10, y: 11}
+    element: 10
+    scale: 1
+    hasBakedOccupancy: 1
+    occupiedCells:
+    - {x: 0, y: 0}
+  - cell: {x: 9, y: 11}
+    element: 10
+    scale: 1
+    hasBakedOccupancy: 1
+    occupiedCells:
+    - {x: 0, y: 0}
+  - cell: {x: 8, y: 11}
+    element: 10
+    scale: 1
+    hasBakedOccupancy: 1
+    occupiedCells:
+    - {x: 0, y: 0}
+  - cell: {x: 7, y: 11}
+    element: 10
+    scale: 1
+    hasBakedOccupancy: 1
+    occupiedCells:
+    - {x: 0, y: 0}
+  - cell: {x: 6, y: 11}
+    element: 10
+    scale: 1
+    hasBakedOccupancy: 1
+    occupiedCells:
+    - {x: 0, y: 0}
+  - cell: {x: 5, y: 11}
+    element: 10
+    scale: 1
+    hasBakedOccupancy: 1
+    occupiedCells:
+    - {x: 0, y: 0}
+  - cell: {x: 4, y: 11}
+    element: 10
+    scale: 1
+    hasBakedOccupancy: 1
+    occupiedCells:
+    - {x: 0, y: 0}
+  - cell: {x: 3, y: 11}
+    element: 10
+    scale: 1
+    hasBakedOccupancy: 1
+    occupiedCells:
+    - {x: 0, y: 0}
+  - cell: {x: 2, y: 11}
+    element: 10
+    scale: 1
+    hasBakedOccupancy: 1
+    occupiedCells:
+    - {x: 0, y: 0}
+  - cell: {x: 1, y: 11}
+    element: 10
+    scale: 1
+    hasBakedOccupancy: 1
+    occupiedCells:
+    - {x: 0, y: 0}
+  - cell: {x: 0, y: 11}
+    element: 10
+    scale: 1
+    hasBakedOccupancy: 1
+    occupiedCells:
+    - {x: 0, y: 0}
+  - cell: {x: 0, y: 10}
+    element: 10
+    scale: 1
+    hasBakedOccupancy: 1
+    occupiedCells:
+    - {x: 0, y: 0}
+  - cell: {x: 0, y: 9}
+    element: 10
+    scale: 1
+    hasBakedOccupancy: 1
+    occupiedCells:
+    - {x: 0, y: 0}
+  - cell: {x: 0, y: 4}
+    element: 10
+    scale: 1
+    hasBakedOccupancy: 1
+    occupiedCells:
+    - {x: 0, y: 0}
+  - cell: {x: 0, y: 3}
+    element: 10
+    scale: 1
+    hasBakedOccupancy: 1
+    occupiedCells:
+    - {x: 0, y: 0}
+  - cell: {x: 0, y: 2}
+    element: 10
+    scale: 1
+    hasBakedOccupancy: 1
+    occupiedCells:
+    - {x: 0, y: 0}
+  - cell: {x: 0, y: 1}
+    element: 10
+    scale: 1
+    hasBakedOccupancy: 1
+    occupiedCells:
+    - {x: 0, y: 0}
+  - cell: {x: 0, y: 5}
+    element: 10
+    scale: 1
+    hasBakedOccupancy: 1
+    occupiedCells:
+    - {x: 0, y: 0}
+  - cell: {x: 0, y: 6}
+    element: 10
+    scale: 1
+    hasBakedOccupancy: 1
+    occupiedCells:
+    - {x: 0, y: 0}
+  - cell: {x: 0, y: 7}
+    element: 10
+    scale: 1
+    hasBakedOccupancy: 1
+    occupiedCells:
+    - {x: 0, y: 0}
+  - cell: {x: 0, y: 8}
+    element: 10
+    scale: 1
+    hasBakedOccupancy: 1
+    occupiedCells:
+    - {x: 0, y: 0}
+  - cell: {x: 0, y: 0}
+    element: 29
+    scale: 1
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 1, y: 0}
+    element: 29
+    scale: 1
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 2, y: 0}
+    element: 29
+    scale: 1
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 3, y: 0}
+    element: 29
+    scale: 1
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 4, y: 0}
+    element: 29
+    scale: 1
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 5, y: 0}
+    element: 29
+    scale: 1
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 6, y: 0}
+    element: 29
+    scale: 1
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 7, y: 0}
+    element: 29
+    scale: 1
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 8, y: 0}
+    element: 29
+    scale: 1
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 9, y: 0}
+    element: 29
+    scale: 1
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 10, y: 0}
+    element: 29
+    scale: 1
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 10, y: 1}
+    element: 29
+    scale: 1
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 10, y: 2}
+    element: 29
+    scale: 1
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 10, y: 3}
+    element: 29
+    scale: 1
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 10, y: 4}
+    element: 29
+    scale: 1
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 10, y: 5}
+    element: 29
+    scale: 1
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 10, y: 6}
+    element: 29
+    scale: 1
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 10, y: 7}
+    element: 29
+    scale: 1
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 10, y: 8}
+    element: 29
+    scale: 1
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 10, y: 9}
+    element: 29
+    scale: 1
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 10, y: 10}
+    element: 29
+    scale: 1
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 10, y: 11}
+    element: 29
+    scale: 1
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 9, y: 11}
+    element: 29
+    scale: 1
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 8, y: 11}
+    element: 29
+    scale: 1
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 7, y: 11}
+    element: 29
+    scale: 1
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 6, y: 11}
+    element: 29
+    scale: 1
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 5, y: 11}
+    element: 29
+    scale: 1
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 4, y: 11}
+    element: 29
+    scale: 1
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 3, y: 11}
+    element: 29
+    scale: 1
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 2, y: 11}
+    element: 29
+    scale: 1
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 1, y: 11}
+    element: 29
+    scale: 1
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 0, y: 11}
+    element: 29
+    scale: 1
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 0, y: 10}
+    element: 29
+    scale: 1
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 0, y: 9}
+    element: 29
+    scale: 1
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 0, y: 8}
+    element: 29
+    scale: 1
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 0, y: 7}
+    element: 29
+    scale: 1
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 0, y: 3}
+    element: 29
+    scale: 1
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 0, y: 2}
+    element: 29
+    scale: 1
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 0, y: 1}
+    element: 29
+    scale: 1
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 0, y: 4}
+    element: 29
+    scale: 1
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 0, y: 5}
+    element: 29
+    scale: 1
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  - cell: {x: 0, y: 6}
+    element: 29
+    scale: 1
+    hasBakedOccupancy: 0
+    occupiedCells: []
+  manualOccupancy:
+  - cell: {x: 2, y: 5}
+    blocked: 0
+  - cell: {x: 2, y: 3}
+    blocked: 0
