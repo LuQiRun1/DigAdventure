@@ -13,19 +13,21 @@ public class SlimeView : MonoBehaviour
     private Vector2Int target;
     private Vector2Int lastDirection;
     private Animator animator;
+    private float cellSize = 1f;
 
-    public void Initialize(LevelData boardLevel, Vector2 worldGridOrigin)
+    public void Initialize(LevelData boardLevel, Vector2 worldGridOrigin, float worldCellSize = 1f)
     {
         level = boardLevel;
         gridOrigin = worldGridOrigin;
+        cellSize = worldCellSize;
     }
 
     private void Start()
     {
         animator = GetComponent<Animator>();
         Vector3 position = transform.position;
-        cell = new Vector2Int(Mathf.RoundToInt(position.x - gridOrigin.x),
-            Mathf.RoundToInt(gridOrigin.y - position.y));
+        cell = new Vector2Int(Mathf.RoundToInt((position.x - gridOrigin.x) / cellSize),
+            Mathf.RoundToInt((gridOrigin.y - position.y) / cellSize));
         if (level == null || !level.IsCellWalkable(cell))
         {
             Debug.LogWarning("Slime 需要有效关卡，且出生位置必须位于可通行格内。", this);
@@ -38,12 +40,12 @@ public class SlimeView : MonoBehaviour
 
     private Vector3 CellCenter(Vector2Int coordinate)
     {
-        return new Vector3(gridOrigin.x + coordinate.x, gridOrigin.y - coordinate.y, transform.position.z);
+        return new Vector3(gridOrigin.x + coordinate.x * cellSize, gridOrigin.y - coordinate.y * cellSize, transform.position.z);
     }
 
     private void Update()
     {
-        float distance = Time.deltaTime; // 每秒一格。
+        float distance = Time.deltaTime * cellSize; // 每秒一格。
         while (distance > 0f)
         {
             if (cell == target)

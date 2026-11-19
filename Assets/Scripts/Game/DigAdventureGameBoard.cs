@@ -22,14 +22,7 @@ public class DigAdventureGameBoard : MonoBehaviour
             return;
         }
 
-        Ray ray = camera.ViewportPointToRay(new Vector3(screenX, screenY, 0f));
-        var mapPlane = new Plane(Vector3.forward, transform.position);
-        if (!mapPlane.Raycast(ray, out float distance))
-        {
-            Debug.LogWarning("摄像机没有朝向地图平面。", this);
-            return;
-        }
-        transform.position = ray.GetPoint(distance);
+        if (!FitGrid(camera)) return;
         if (!geologyRoot || !sceneryRoot || !monsterRoot || !slimePrefab)
         {
             Debug.LogError("请绑定 BoardRoot 下的三个容器和 Slime 预制体。", this);
@@ -57,6 +50,36 @@ public class DigAdventureGameBoard : MonoBehaviour
         SpawnSlime(center);
     }
 
+    private bool FitGrid(Camera camera)
+    {
+        var plane = new Plane(Vector3.forward, transform.position);
+        Ray bottomLeft = camera.ViewportPointToRay(Vector3.zero);
+        Ray topRight = camera.ViewportPointToRay(Vector3.one);
+        if (!plane.Raycast(bottomLeft, out float near) || !plane.Raycast(topRight, out float far))
+        {
+            Debug.LogWarning("摄像机没有朝向地图平面。", this);
+            return false;
+        }
+        Vector3 min = bottomLeft.GetPoint(near);
+        Vector3 max = topRight.GetPoint(far);
+        float width = max.x - min.x;
+        float height = max.y - min.y;
+        // 在目标中心两侧各留出半张地图；端点比例则贴边显示一个完整网格。
+        float cellSize = Mathf.Min(width / level.Width, height / level.Height);
+        if (screenX > 0f && screenX < 1f)
+            cellSize = Mathf.Min(cellSize, 2f * width * Mathf.Min(screenX, 1f - screenX) / level.Width);
+        if (screenY > 0f && screenY < 1f)
+            cellSize = Mathf.Min(cellSize, 2f * height * Mathf.Min(screenY, 1f - screenY) / level.Height);
+        float halfWidth = level.Width * cellSize / 2f;
+        float halfHeight = level.Height * cellSize / 2f;
+        transform.position = new Vector3(
+            Mathf.Clamp(Mathf.Lerp(min.x, max.x, screenX), min.x + halfWidth, max.x - halfWidth),
+            Mathf.Clamp(Mathf.Lerp(min.y, max.y, screenY), min.y + halfHeight, max.y - halfHeight),
+            transform.position.z);
+        transform.localScale = Vector3.one * cellSize;
+        return true;
+    }
+
     private void SpawnSlime(Vector2 center)
     {
         int count = level.Width * level.Height;
@@ -70,7 +93,7 @@ public class DigAdventureGameBoard : MonoBehaviour
             var origin = monsterRoot.TransformPoint(new Vector3(-center.x, center.y));
             var position = monsterRoot.TransformPoint(new Vector3(cell.x - center.x, center.y - cell.y));
             var slime = Instantiate(slimePrefab, position, monsterRoot.rotation, monsterRoot);
-            slime.Initialize(level, origin);
+            slime.Initialize(level, origin, monsterRoot.lossyScale.x);
             slime.GetComponent<SpriteRenderer>().sortingOrder = level.SceneElements.Count;
             return;
         }
