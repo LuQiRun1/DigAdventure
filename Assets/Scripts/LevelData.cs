@@ -269,6 +269,11 @@ public sealed class LevelData : ScriptableObject, ISerializationCallbackReceiver
 
     public bool IsCellWalkable(Vector2Int cell)
     {
+        return IsCellWalkableIgnoring(cell, SceneElement.None);
+    }
+
+    public bool IsCellWalkableIgnoring(Vector2Int cell, SceneElement ignoredElement)
+    {
         if (!ContainsCell(cell))
             return false;
 
@@ -284,7 +289,7 @@ public sealed class LevelData : ScriptableObject, ISerializationCallbackReceiver
             var occupiedCells = placement.OccupiedCellsFromAnchor;
             for (int i = 0; i < occupiedCells.Count; i++)
             {
-                if (occupiedCells[i] == relativeCell)
+                if (occupiedCells[i] == relativeCell && placement.Element != ignoredElement)
                     return false;
             }
         }

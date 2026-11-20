@@ -1,7 +1,12 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public class DigAdventureGameBoard : MonoBehaviour
 {
+    private const int MinSpawnDistance = 5;
+    private static readonly Vector2Int[] NeighborOffsets =
+        { Vector2Int.left, Vector2Int.right, Vector2Int.up, Vector2Int.down };
+
     [SerializeField] private LevelData level;
     [SerializeField, Range(0f, 1f), Tooltip("地图中心的水平屏幕比例，从左向右。")]
     private float screenX = 0.5f;
@@ -12,6 +17,8 @@ public class DigAdventureGameBoard : MonoBehaviour
     [SerializeField] private Transform sceneryRoot;
     [SerializeField] private Transform monsterRoot;
     [SerializeField] private SlimeView slimePrefab;
+    [SerializeField] private WolfView wolfPrefab;
+    [SerializeField] private AdventurerView adventurerPrefab;
 
     private void Start()
     {
@@ -23,9 +30,9 @@ public class DigAdventureGameBoard : MonoBehaviour
         }
 
         if (!FitGrid(camera)) return;
-        if (!geologyRoot || !sceneryRoot || !monsterRoot || !slimePrefab)
+        if (!geologyRoot || !sceneryRoot || !monsterRoot || !slimePrefab || !wolfPrefab || !adventurerPrefab)
         {
-            Debug.LogError("请绑定 BoardRoot 下的三个容器和 Slime 预制体。", this);
+            Debug.LogError("请绑定 BoardRoot 下的三个容器、Slime、Wolf 和 Adventurer 预制体。", this);
             return;
         }
         Vector2 center = new Vector2(level.Width - 1, level.Height - 1) * 0.5f;
@@ -47,7 +54,7 @@ public class DigAdventureGameBoard : MonoBehaviour
             renderer.sprite = sprite;
             renderer.sortingOrder = element.IsGeology ? -1 : i;
         }
-        SpawnSlime(center);
+        SpawnCharacters(center);
     }
 
     private bool FitGrid(Camera camera)
@@ -80,23 +87,103 @@ public class DigAdventureGameBoard : MonoBehaviour
         return true;
     }
 
-    private void SpawnSlime(Vector2 center)
+    private void SpawnCharacters(Vector2 center)
     {
         int count = level.Width * level.Height;
-        int start = (level.Height / 2) * level.Width + level.Width / 2;
+        int start = Random.Range(0, count);
+        Vector2Int? adventurerCell = null;
+        Vector2Int? slimeCell = null;
+        Vector2Int? wolfCell = null;
+        var frontier = new Queue<(Vector2Int cell, int distance)>();
+        var visited = new HashSet<Vector2Int>();
+
         for (int offset = 0; offset < count; offset++)
         {
             int index = (start + offset) % count;
             var cell = new Vector2Int(index % level.Width, index / level.Width);
             if (!level.IsCellWalkable(cell)) continue;
 
-            var origin = monsterRoot.TransformPoint(new Vector3(-center.x, center.y));
-            var position = monsterRoot.TransformPoint(new Vector3(cell.x - center.x, center.y - cell.y));
-            var slime = Instantiate(slimePrefab, position, monsterRoot.rotation, monsterRoot);
-            slime.Initialize(level, origin, monsterRoot.lossyScale.x);
-            slime.GetComponent<SpriteRenderer>().sortingOrder = level.SceneElements.Count;
+            if (!adventurerCell.HasValue)
+                adventurerCell = cell;
+
+            if (TryFindMonsterSpawn(cell, null, frontier, visited, out Vector2Int candidate))
+            {
+                adventurerCell = cell;
+                slimeCell = candidate;
+                if (TryFindMonsterSpawn(cell, slimeCell, frontier, visited, out candidate))
+                    wolfCell = candidate;
+                break;
+            }
+        }
+
+        if (!adventurerCell.HasValue)
+        {
+            Debug.LogWarning("当前关卡没有可供 Adventurer 出生的通行格。", this);
             return;
         }
-        Debug.LogWarning("当前关卡没有可供 Slime 出生的通行格。", this);
+
+        var origin = monsterRoot.TransformPoint(new Vector3(-center.x, center.y));
+        var adventurer = Instantiate(adventurerPrefab, SpawnPosition(adventurerCell.Value, center),
+            monsterRoot.rotation, monsterRoot);
+        adventurer.Initialize(level, origin, monsterRoot.lossyScale.x);
+        adventurer.GetComponent<SpriteRenderer>().sortingOrder = level.SceneElements.Count + 1;
+
+        if (!slimeCell.HasValue)
+        {
+            Debug.LogWarning("当前关卡没有最短通行距离至少为 5 格的出生点组合，跳过 Slime 生成。", this);
+        }
+        else
+        {
+            var slime = Instantiate(slimePrefab, SpawnPosition(slimeCell.Value, center),
+                monsterRoot.rotation, monsterRoot);
+            slime.Initialize(level, origin, monsterRoot.lossyScale.x);
+            slime.GetComponent<SpriteRenderer>().sortingOrder = level.SceneElements.Count;
+        }
+
+        if (!wolfCell.HasValue)
+        {
+            Debug.LogWarning("当前关卡没有第二个与 Adventurer 距离至少 5 格的出生点，跳过 Wolf 生成。", this);
+            return;
+        }
+
+        var wolf = Instantiate(wolfPrefab, SpawnPosition(wolfCell.Value, center),
+            monsterRoot.rotation, monsterRoot);
+        wolf.Initialize(level, origin, monsterRoot.lossyScale.x, adventurer);
+        wolf.GetComponent<SpriteRenderer>().sortingOrder = level.SceneElements.Count;
+    }
+
+    private bool TryFindMonsterSpawn(Vector2Int start, Vector2Int? excluded,
+        Queue<(Vector2Int cell, int distance)> frontier, HashSet<Vector2Int> visited, out Vector2Int spawn)
+    {
+        frontier.Clear();
+        visited.Clear();
+        frontier.Enqueue((start, 0));
+        visited.Add(start);
+
+        while (frontier.Count > 0)
+        {
+            var (cell, distance) = frontier.Dequeue();
+            // BFS 首次到达的距离就是最短距离。若有更远的格，路上必经第 5 格。
+            if (distance >= MinSpawnDistance && (!excluded.HasValue || cell != excluded.Value))
+            {
+                spawn = cell;
+                return true;
+            }
+
+            foreach (Vector2Int offset in NeighborOffsets)
+            {
+                Vector2Int next = cell + offset;
+                if (visited.Add(next) && level.IsCellWalkable(next))
+                    frontier.Enqueue((next, distance + 1));
+            }
+        }
+
+        spawn = default;
+        return false;
+    }
+
+    private Vector3 SpawnPosition(Vector2Int cell, Vector2 center)
+    {
+        return monsterRoot.TransformPoint(new Vector3(cell.x - center.x, center.y - cell.y));
     }
 }
