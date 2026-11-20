@@ -3,6 +3,8 @@ using UnityEngine;
 
 public sealed class MonsterData : ScriptableObject
 {
+    [SerializeField] private Sprite previewSprite;
+    public Sprite PreviewSprite => previewSprite;
     [SerializeField, TextArea(3, 8)] private string description = "";
     [SerializeField, Min(0f)] private float speed = GameDataConfig.DefaultMonsterSpeed;
     [SerializeField] private List<string> traits = new List<string>();

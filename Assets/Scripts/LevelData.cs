@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using SceneElement = GameDataConfig.SceneElement;
+using GeologyElement = GameDataConfig.GeologyElement;
 
 public sealed class LevelData : ScriptableObject, ISerializationCallbackReceiver
 {
@@ -12,6 +13,17 @@ public sealed class LevelData : ScriptableObject, ISerializationCallbackReceiver
     private Dictionary<Vector2Int, int> manualOccupancyIndices;
 
     public int Width => width;
+    [SerializeField, Min(0)] private int slimeCount = 1;
+    [SerializeField, Min(0)] private int wolfCount = 1;
+    [SerializeField] private int[] chestCounts = new int[(int)GameDataConfig.ItemQuality.Red + 1];
+    public int GetChestCount(GameDataConfig.ItemQuality quality)
+    {
+        int index = (int)quality;
+        return chestCounts != null && index >= 0 && index < chestCounts.Length
+            ? Mathf.Max(0, chestCounts[index]) : 0;
+    }
+    public int SlimeCount => Mathf.Max(0, slimeCount);
+    public int WolfCount => Mathf.Max(0, wolfCount);
     public int Height => height;
     public IReadOnlyList<ElementPlacement> SceneElements => sceneElements;
 
@@ -34,13 +46,16 @@ public sealed class LevelData : ScriptableObject, ISerializationCallbackReceiver
     public struct ElementPlacement
     {
         [SerializeField] private Vector2Int cell;
-        [SerializeField] private SceneElement element;
+        // Keep the original serialized field name and IDs used by existing levels.
+        [SerializeField] private int element;
         [SerializeField] private float scale;
         [SerializeField] private bool hasBakedOccupancy;
         [SerializeField] private Vector2Int[] occupiedCells;
 
         public Vector2Int Cell => cell;
-        public SceneElement Element => element;
+        public int ElementId => element;
+        public SceneElement Element => IsGeology ? SceneElement.None : (SceneElement)element;
+        public GeologyElement Geology => IsGeology ? (GeologyElement)element : GeologyElement.None;
         public bool IsGeology => GameDataConfig.IsGeology(element);
         // Older levels have no saved scale and use the original size.
         public float Scale => scale > 0f ? scale : 1f;
@@ -56,7 +71,7 @@ public sealed class LevelData : ScriptableObject, ISerializationCallbackReceiver
             }
         }
 
-        public ElementPlacement(Vector2Int cell, SceneElement element, float scale, Vector2Int[] occupiedCells)
+        internal ElementPlacement(Vector2Int cell, int element, float scale, Vector2Int[] occupiedCells)
         {
             this.cell = cell;
             this.element = element;
@@ -134,23 +149,28 @@ public sealed class LevelData : ScriptableObject, ISerializationCallbackReceiver
         if (element == SceneElement.None)
             return RemoveTopElement(cell);
 
-        bool geology = GameDataConfig.IsGeology(element);
-        if (!geology && occupiedCells == null)
+        if (occupiedCells == null || !Enum.IsDefined(typeof(SceneElement), element))
             return false;
 
-        var placement = new ElementPlacement(cell, element, geology ? 1f : scale, geology ? null : occupiedCells);
-        int index = geology ? FindPlacement(cell, true) : -1;
+        sceneElements.Add(new ElementPlacement(cell, (int)element, scale, occupiedCells));
+        return true;
+    }
+
+    public bool SetGeologyElement(Vector2Int cell, GeologyElement geology)
+    {
+        if (!ContainsCell(cell) || !GameDataConfig.IsGeology((int)geology))
+            return false;
+
+        int index = FindPlacement(cell, true);
+        if (index >= 0 && sceneElements[index].Geology == geology)
+            return false;
+
+        var placement = new ElementPlacement(cell, (int)geology, 1f, null);
         if (index < 0)
-        {
             sceneElements.Add(placement);
-            return true;
-        }
+        else
+            sceneElements[index] = placement;
 
-        ElementPlacement existing = sceneElements[index];
-        if (existing.Element == element)
-            return false;
-
-        sceneElements[index] = placement;
         return true;
     }
 
@@ -160,11 +180,11 @@ public sealed class LevelData : ScriptableObject, ISerializationCallbackReceiver
             return false;
 
         ElementPlacement existing = sceneElements[placementIndex];
-        if (existing.Element == SceneElement.None || existing.IsGeology || occupiedCells == null ||
+        if (existing.Element == SceneElement.None || occupiedCells == null ||
             (existing.HasBakedOccupancy && existing.Scale.Equals(scale)))
             return false;
 
-        sceneElements[placementIndex] = new ElementPlacement(existing.Cell, existing.Element, scale, occupiedCells);
+        sceneElements[placementIndex] = new ElementPlacement(existing.Cell, existing.ElementId, scale, occupiedCells);
         return true;
     }
 
@@ -217,9 +237,16 @@ public sealed class LevelData : ScriptableObject, ISerializationCallbackReceiver
 
     public bool BlocksSight(Vector2Int cell)
     {
-        return !ContainsCell(cell) || (GetManualOccupancyIndices().TryGetValue(cell, out int index)
-            && manualOccupancy[index].blocksSight);
+        if (!ContainsCell(cell)) return true;
+        if (GetManualOccupancyIndices().TryGetValue(cell, out int index)) return manualOccupancy[index].blocksSight;
+        return HasElementTrait(cell, SceneElementRules.Traits.BlocksSight);
     }
+
+    public bool BlocksSmell(Vector2Int cell) =>
+        !ContainsCell(cell) || HasElementTrait(cell, SceneElementRules.Traits.BlocksSmell);
+
+    public bool BlocksHearing(Vector2Int cell) =>
+        !ContainsCell(cell) || HasElementTrait(cell, SceneElementRules.Traits.BlocksHearing);
 
     public bool SetManualOccupancy(Vector2Int cell, bool blocked)
     {
@@ -280,21 +307,36 @@ public sealed class LevelData : ScriptableObject, ISerializationCallbackReceiver
         if (TryGetManualOccupancy(cell, out bool blocked))
             return !blocked;
 
+        return !HasElementTrait(cell, SceneElementRules.Traits.Passable, false, ignoredElement);
+    }
+
+    public bool CanMonsterEnter(Vector2Int cell, bool allowPassableElements)
+    {
+        return IsCellWalkable(cell) && (allowPassableElements || !HasElementTrait(cell, SceneElementRules.Traits.Passable));
+    }
+
+    private bool HasElementTrait(Vector2Int cell, SceneElementRules.Traits trait, bool expected = true,
+        SceneElement ignoredElement = SceneElement.None)
+    {
+        var rules = SceneElementRules.Shared;
         foreach (var placement in sceneElements)
         {
-            if (!CanOccupyCells(placement))
+            if (!CanOccupyCells(placement) || placement.Element == ignoredElement)
                 continue;
 
+            var traits = rules ? rules.Get(placement.Element) : SceneElementRules.Traits.None;
+            bool hasTrait = (traits & trait) != 0;
+            if (hasTrait != expected) continue;
             Vector2Int relativeCell = cell - placement.Cell;
             var occupiedCells = placement.OccupiedCellsFromAnchor;
             for (int i = 0; i < occupiedCells.Count; i++)
             {
-                if (occupiedCells[i] == relativeCell && placement.Element != ignoredElement)
-                    return false;
+                if (occupiedCells[i] == relativeCell)
+                    return true;
             }
         }
 
-        return true;
+        return false;
     }
 
     private bool TryGetManualOccupancy(Vector2Int cell, out bool blocked)
@@ -323,7 +365,7 @@ public sealed class LevelData : ScriptableObject, ISerializationCallbackReceiver
 
     private bool CanOccupyCells(ElementPlacement placement)
     {
-        return placement.Element != SceneElement.None && !placement.IsGeology && ContainsCell(placement.Cell);
+        return placement.Element != SceneElement.None && ContainsCell(placement.Cell);
     }
 
     private bool RemoveTopElement(Vector2Int cell)

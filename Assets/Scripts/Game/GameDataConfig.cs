@@ -16,6 +16,26 @@
     public const float SceneElementOccupancyThreshold = 0.2f;
     public const float SceneElementDefaultSizeInCells = 5f / 6f;
 
+    /// <summary>可在信息编辑器中记录设计说明的物品类型。</summary>
+    public enum ItemType
+    {
+        Key = 0,
+        Coin = 1,
+        TreasureChest = 2,
+        Shovel = 3
+    }
+
+    public enum ItemQuality { White = 0, Green = 1, Blue = 2, Purple = 3, Red = 4 }
+
+    /// <summary>游戏中的怪物类型。</summary>
+    public enum MonsterType
+    {
+        /// <summary>史莱姆。</summary>
+        Slime = 0,
+        /// <summary>狼。</summary>
+        Wolf = 1
+    }
+
     /// <summary>关卡网格中可放置的场景元素类型。</summary>
     public enum SceneElement
     {
@@ -68,8 +88,13 @@
         /// <summary>常绿针叶树。</summary>
         PineTree = 23,
         /// <summary>蓝色发光树。</summary>
-        GlowingBlueTree = 24,
+        GlowingBlueTree = 24
+    }
 
+    /// <summary>关卡地质类型，保留现有关卡和 Sprite 数组使用的编号。</summary>
+    public enum GeologyElement
+    {
+        None = 0,
         // geology.png uses four variants each of grass, dirt, stone and mossy dirt.
         GrassTile1 = 25,
         GrassTile2 = 26,
@@ -89,8 +114,13 @@
         MossyDirtTile4 = 40
     }
 
-    public static bool IsGeology(SceneElement element)
+    public static bool IsGeology(int elementId)
     {
-        return element >= SceneElement.GrassTile1 && element <= SceneElement.MossyDirtTile4;
+        return elementId >= (int)GeologyElement.GrassTile1 && elementId <= (int)GeologyElement.MossyDirtTile4;
+    }
+
+    public static string GetElementName(int elementId)
+    {
+        return IsGeology(elementId) ? ((GeologyElement)elementId).ToString() : ((SceneElement)elementId).ToString();
     }
 }

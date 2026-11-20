@@ -139,6 +139,7 @@ public sealed class MonsterEditor : EditorWindow
             detailsScroll = scroll.scrollPosition;
             using (var data = new SerializedObject(selectedMonster))
             {
+                EditorGUILayout.PropertyField(data.FindProperty("previewSprite"), new GUIContent("预览图"));
                 EditorGUILayout.PropertyField(data.FindProperty("description"), new GUIContent("描述"));
                 EditorGUILayout.PropertyField(data.FindProperty("speed"), new GUIContent("速度"));
                 EditorGUILayout.PropertyField(data.FindProperty("traits"), new GUIContent("特性"), true);

@@ -1046,5 +1046,13 @@ MonoBehaviour:
   manualOccupancy:
   - cell: {x: 2, y: 5}
     blocked: 0
+    blocksSight: 0
   - cell: {x: 2, y: 3}
     blocked: 0
+    blocksSight: 0
+  - cell: {x: 4, y: 4}
+    blocked: 0
+    blocksSight: 0
+  - cell: {x: 2, y: 4}
+    blocked: 1
+    blocksSight: 1

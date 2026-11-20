@@ -4,6 +4,7 @@ using System.IO;
 using UnityEditor;
 using UnityEngine;
 using SceneElement = GameDataConfig.SceneElement;
+using GeologyElement = GameDataConfig.GeologyElement;
 
 public sealed class LevelEditor : EditorWindow
 {
@@ -27,19 +28,21 @@ public sealed class LevelEditor : EditorWindow
     private const float PaletteScrollGutter = 30f;
     [SerializeField] private LevelData selectedLevel;
     [SerializeField] private bool gridEditingExpanded = true;
+    [SerializeField] private bool monstersExpanded;
+    [SerializeField] private bool chestsExpanded;
     [SerializeField] private bool sceneElementsExpanded;
     [SerializeField] private bool geologyElementsExpanded;
-    [SerializeField] private SceneElement selectedElement;
+    [SerializeField] private int selectedElement;
     [SerializeField] private float brushScale = 1f;
     [SerializeField] private float gridZoom = 1f;
     [SerializeField] private bool showAllOccupiedCells;
     [SerializeField] private bool editingGridOccupancy = true;
     [SerializeField] private float sidebarWidth = DefaultSidebarWidth;
     private readonly List<LevelData> levels = new List<LevelData>();
-    private readonly Dictionary<SceneElement, Sprite> elementSprites = new Dictionary<SceneElement, Sprite>();
-    private readonly List<SceneElement> scenePalette = new List<SceneElement>();
-    private readonly List<SceneElement> geologyPalette = new List<SceneElement>();
-    private readonly Dictionary<SceneElement, SceneElementFootprint> footprints = new Dictionary<SceneElement, SceneElementFootprint>();
+    private readonly Dictionary<int, Sprite> elementSprites = new Dictionary<int, Sprite>();
+    private readonly List<int> scenePalette = new List<int>();
+    private readonly List<int> geologyPalette = new List<int>();
+    private readonly Dictionary<int, SceneElementFootprint> footprints = new Dictionary<int, SceneElementFootprint>();
     private readonly Dictionary<string, Hash128> footprintAtlasHashes = new Dictionary<string, Hash128>();
     private Vector2 listScroll;
     private Vector2 gridScroll;
@@ -51,7 +54,7 @@ public sealed class LevelEditor : EditorWindow
     private readonly HashSet<Vector2Int> highlightedOccupancy = new HashSet<Vector2Int>();
     private LevelData strokeLevel;
     private Vector2Int? lastStrokeCell;
-    private SceneElement strokeElement;
+    private int strokeElement;
     private float strokeScale;
     private Vector2Int[] strokeOccupancy;
     private int editingPlacementIndex = -1;
@@ -115,9 +118,7 @@ public sealed class LevelEditor : EditorWindow
         elementSprites.Clear();
         scenePalette.Clear();
         geologyPalette.Clear();
-        LoadSceneElementSprites(SceneElementsAtlas, SceneElement.FloweringBush, SceneElement.BrokenTreeStump, scenePalette);
-        LoadSceneElementSprites(TreesAtlas, SceneElement.GreenBroadleafTree, SceneElement.GlowingBlueTree, scenePalette);
-        LoadSceneElementSprites(GeologyAtlas, SceneElement.GrassTile1, SceneElement.MossyDirtTile4, geologyPalette);
+        LoadElementSprites(elementSprites, scenePalette, geologyPalette);
         scenePalette.Sort();
         geologyPalette.Sort();
         InvalidateFootprints(SceneElementsAtlas);
@@ -134,7 +135,7 @@ public sealed class LevelEditor : EditorWindow
         footprintAtlasHashes.Clear();
     }
 
-    private Vector2Int[] CalculateOccupancy(SceneElement element, float scale)
+    private Vector2Int[] CalculateOccupancy(int element, float scale)
     {
         if (!elementSprites.TryGetValue(element, out Sprite sprite) || GameDataConfig.IsGeology(element))
             return null;
@@ -162,7 +163,7 @@ public sealed class LevelEditor : EditorWindow
             Texture2D imported = sprite.texture;
             float sourceScaleX = (float)image.width / imported.width;
             float sourceScaleY = (float)image.height / imported.height;
-            foreach (SceneElement element in scenePalette)
+            foreach (int element in scenePalette)
             {
                 Sprite candidate = elementSprites[element];
                 if (candidate.texture != imported)
@@ -193,11 +194,18 @@ public sealed class LevelEditor : EditorWindow
         }
     }
 
-    private void LoadSceneElementSprites(string assetPath, SceneElement firstElement, SceneElement lastElement,
-        List<SceneElement> palette)
+    internal static void LoadElementSprites(Dictionary<int, Sprite> sprites, List<int> scenes = null, List<int> geology = null)
+    {
+        LoadSceneElementSprites(SceneElementsAtlas, (int)SceneElement.FloweringBush, (int)SceneElement.BrokenTreeStump, scenes, sprites);
+        LoadSceneElementSprites(TreesAtlas, (int)SceneElement.GreenBroadleafTree, (int)SceneElement.GlowingBlueTree, scenes, sprites);
+        LoadSceneElementSprites(GeologyAtlas, (int)GeologyElement.GrassTile1, (int)GeologyElement.MossyDirtTile4, geology, sprites);
+    }
+
+    private static void LoadSceneElementSprites(string assetPath, int firstElement, int lastElement,
+        List<int> palette, Dictionary<int, Sprite> elementSprites)
     {
         string spritePrefix = Path.GetFileNameWithoutExtension(assetPath) + "_";
-        int lastIndex = (int)lastElement - (int)firstElement;
+        int lastIndex = lastElement - firstElement;
         foreach (var asset in AssetDatabase.LoadAllAssetsAtPath(assetPath))
         {
             if (asset is Sprite sprite &&
@@ -205,9 +213,9 @@ public sealed class LevelEditor : EditorWindow
                 int.TryParse(sprite.name.Substring(spritePrefix.Length), out int index) &&
                 index >= 0 && index <= lastIndex)
             {
-                var element = (SceneElement)((int)firstElement + index);
+                int element = firstElement + index;
                 if (!elementSprites.ContainsKey(element))
-                    palette.Add(element);
+                    palette?.Add(element);
                 elementSprites[element] = sprite;
             }
         }
@@ -240,10 +248,10 @@ public sealed class LevelEditor : EditorWindow
         for (int i = 0; i < level.SceneElements.Count; i++)
         {
             var placement = level.SceneElements[i];
-            if (placement.Element == SceneElement.None || placement.IsGeology || placement.HasBakedOccupancy)
+            if (placement.Element == SceneElement.None || placement.HasBakedOccupancy)
                 continue;
 
-            Vector2Int[] cells = CalculateOccupancy(placement.Element, placement.Scale);
+            Vector2Int[] cells = CalculateOccupancy(placement.ElementId, placement.Scale);
             if (cells != null)
                 changed |= level.SetSceneElementTransform(i, placement.Scale, cells);
         }
@@ -336,6 +344,18 @@ public sealed class LevelEditor : EditorWindow
                     EditorGUILayout.Space();
                     using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
                         DrawGridEditing();
+                    monstersExpanded = EditorGUILayout.Foldout(monstersExpanded, "怪物", true);
+                    if (monstersExpanded)
+                    {
+                        using (var data = new SerializedObject(selectedLevel))
+                        {
+                            EditorGUILayout.PropertyField(data.FindProperty("slimeCount"), new GUIContent("史莱姆数量"));
+                            EditorGUILayout.PropertyField(data.FindProperty("wolfCount"), new GUIContent("狼数量"));
+                            if (data.ApplyModifiedProperties()) AssetDatabase.SaveAssetIfDirty(selectedLevel);
+                        }
+                    }
+                    chestsExpanded = EditorGUILayout.Foldout(chestsExpanded, "宝箱", true);
+                    if (chestsExpanded) DrawChestCounts();
                 }
 
                 DrawElementPalette("场景元素", scenePalette, ref sceneElementsExpanded, ref paletteScroll, currentSidebarWidth);
@@ -407,7 +427,7 @@ public sealed class LevelEditor : EditorWindow
         }
     }
 
-    private void DrawElementPalette(string label, List<SceneElement> palette, ref bool expanded,
+    private void DrawElementPalette(string label, List<int> palette, ref bool expanded,
         ref Vector2 scroll, float currentSidebarWidth)
     {
         bool isOpen = EditorGUILayout.Foldout(expanded, label, true);
@@ -421,7 +441,7 @@ public sealed class LevelEditor : EditorWindow
             return;
 
         if (palette == scenePalette && selectedLevel != null &&
-            selectedElement != SceneElement.None && !GameDataConfig.IsGeology(selectedElement))
+            selectedElement != (int)SceneElement.None && !GameDataConfig.IsGeology(selectedElement))
         {
             DrawSceneElementTransform();
         }
@@ -452,9 +472,9 @@ public sealed class LevelEditor : EditorWindow
         }
     }
 
-    private void DrawPaletteCard(Rect card, SceneElement element)
+    private void DrawPaletteCard(Rect card, int element)
     {
-        var tooltip = new GUIContent("", ObjectNames.NicifyVariableName(element.ToString()));
+        var tooltip = new GUIContent("", ObjectNames.NicifyVariableName(GameDataConfig.GetElementName(element)));
         if (GUI.Button(card, tooltip, GUIStyle.none))
         {
             selectedElement = element;
@@ -479,11 +499,16 @@ public sealed class LevelEditor : EditorWindow
         DrawElementSprite(image, element);
     }
 
-    private void DrawElementSprite(Rect target, SceneElement element)
+    private void DrawElementSprite(Rect target, int element)
     {
         if (Event.current.type != EventType.Repaint || !elementSprites.TryGetValue(element, out Sprite sprite))
             return;
 
+        DrawSpritePreview(target, sprite);
+    }
+
+    internal static void DrawSpritePreview(Rect target, Sprite sprite)
+    {
         Texture2D texture = sprite.texture;
         Rect source = sprite.textureRect;
         float scale = Mathf.Min(target.width / source.width, target.height / source.height);
@@ -492,6 +517,23 @@ public sealed class LevelEditor : EditorWindow
         var uv = new Rect(source.x / texture.width, source.y / texture.height,
             source.width / texture.width, source.height / texture.height);
         GUI.DrawTextureWithTexCoords(destination, texture, uv);
+    }
+
+    private void DrawChestCounts()
+    {
+        using (var data = new SerializedObject(selectedLevel))
+        using (new EditorGUI.IndentLevelScope())
+        {
+            var counts = data.FindProperty("chestCounts");
+            var names = DesignInfoEditor.QualityNames;
+            if (counts.arraySize < names.Length) counts.arraySize = names.Length;
+            for (int i = 0; i < names.Length; i++)
+            {
+                var count = counts.GetArrayElementAtIndex(i);
+                count.intValue = Mathf.Max(0, EditorGUILayout.DelayedIntField(names[i] + "宝箱数量", count.intValue));
+            }
+            if (data.ApplyModifiedProperties()) AssetDatabase.SaveAssetIfDirty(selectedLevel);
+        }
     }
 
     private void DrawGridEditing()
@@ -599,7 +641,7 @@ public sealed class LevelEditor : EditorWindow
         }
 
         Undo.RecordObject(selectedLevel, "调整场景元素");
-        if (ApplyElementScale(placement.Element, scale))
+        if (ApplyElementScale(placement.ElementId, scale))
             AssetDatabase.SaveAssetIfDirty(selectedLevel);
     }
 
@@ -692,7 +734,7 @@ public sealed class LevelEditor : EditorWindow
 
             Rect target = GetPlacementRect(gridOrigin, placement);
             if (target.Overlaps(visibleContent))
-                DrawElementSprite(target, placement.Element);
+                DrawElementSprite(target, placement.ElementId);
         }
     }
 
@@ -735,9 +777,11 @@ public sealed class LevelEditor : EditorWindow
     {
         var rect = new Rect(gridOrigin + (Vector2)cell * GridCellSize, Vector2.one * GridCellSize);
         if (!rect.Overlaps(visibleContent) || !highlightedOccupancy.Add(cell)) return;
+        var cellType = selectedLevel.GetCellType(cell);
+        if (cellType == LevelData.CellType.Open) return;
         Color32 color = new Color32(244, 155, 52, 230);
-        if (selectedLevel.BlocksSight(cell))
-            color = selectedLevel.IsCellWalkable(cell)
+        if ((cellType & LevelData.CellType.BlockSight) != 0)
+            color = cellType == LevelData.CellType.BlockSight
                 ? new Color32(55, 160, 245, 230) : new Color32(174, 90, 220, 230);
         Handles.DrawSolidRectangleWithOutline(rect, new Color32(color.r, color.g, color.b, 72), color);
     }
@@ -758,7 +802,7 @@ public sealed class LevelEditor : EditorWindow
         editingPlacementIndex = FindPlacedElementIndex(grid, pointerPosition, cycle);
         if (TryGetSelectedPlacement(out var placement))
         {
-            selectedElement = placement.Element;
+            selectedElement = placement.ElementId;
             brushScale = placement.Scale;
             sceneElementsExpanded = true;
         }
@@ -775,7 +819,7 @@ public sealed class LevelEditor : EditorWindow
         return !placement.IsGeology && selectedLevel.ContainsCell(placement.Cell);
     }
 
-    private bool ApplyElementScale(SceneElement element, float scale)
+    private bool ApplyElementScale(int element, float scale)
     {
         Vector2Int[] cells = CalculateOccupancy(element, scale);
         if (!selectedLevel.SetSceneElementTransform(editingPlacementIndex, scale, cells))
@@ -797,7 +841,7 @@ public sealed class LevelEditor : EditorWindow
         if (!Mathf.Approximately(scale, placement.Scale))
         {
             Undo.RecordObject(selectedLevel, "缩放场景元素");
-            if (ApplyElementScale(placement.Element, scale))
+            if (ApplyElementScale(placement.ElementId, scale))
                 AssetDatabase.SaveAssetIfDirty(selectedLevel);
         }
 
@@ -853,7 +897,7 @@ public sealed class LevelEditor : EditorWindow
             strokeLevel = selectedLevel;
             strokeButton = pointer.button;
             strokeEditsOccupancy = editingGridOccupancy;
-            strokeElement = erase ? SceneElement.None : selectedElement;
+            strokeElement = erase ? (int)SceneElement.None : selectedElement;
             strokeScale = brushScale;
             strokeOccupancy = strokeEditsOccupancy ? null : CalculateOccupancy(strokeElement, strokeScale);
             strokeUndoName = strokeEditsOccupancy
@@ -989,7 +1033,9 @@ public sealed class LevelEditor : EditorWindow
                 changed |= strokeEditsOccupancy
                     ? strokeLevel.SetCellType(cell, strokeButton == 1 ? LevelData.CellType.Open
                         : (LevelData.CellType)(((int)strokeLevel.GetCellType(cell) + 1) % 4))
-                    : strokeLevel.SetSceneElement(cell, strokeElement, strokeScale, strokeOccupancy);
+                    : GameDataConfig.IsGeology(strokeElement)
+                        ? strokeLevel.SetGeologyElement(cell, (GeologyElement)strokeElement)
+                        : strokeLevel.SetSceneElement(cell, (SceneElement)strokeElement, strokeScale, strokeOccupancy);
             }
             if (cell == end)
                 break;

@@ -1,0 +1,70 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 871f70844c1c4c43bb2210714f8343b1, type: 3}
+  m_Name: ChestCatalog
+  m_EditorClassIdentifier: 
+  tiers:
+  - shape: 1
+    singleCellCost: 1
+    quality: 0
+    description: 
+    capacity: {x: 1, y: 1}
+    weights: 0100000000000000000000000000000000000000
+    minDepth: 1
+    maxDepth: 0
+  - shape: 1
+    singleCellCost: 1
+    quality: 1
+    description: 
+    capacity: {x: 1, y: 1}
+    weights: 0000000001000000000000000000000000000000
+    minDepth: 1
+    maxDepth: 0
+  - shape: 1
+    singleCellCost: 1
+    quality: 2
+    description: 
+    capacity: {x: 1, y: 1}
+    weights: 0000000000000000010000000000000000000000
+    minDepth: 1
+    maxDepth: 0
+  - shape: 1
+    singleCellCost: 1
+    quality: 3
+    description: 
+    capacity: {x: 1, y: 1}
+    weights: 0000000000000000000000000100000000000000
+    minDepth: 1
+    maxDepth: 0
+  - shape: 1
+    singleCellCost: 1
+    quality: 4
+    description: 
+    capacity: {x: 1, y: 1}
+    weights: 0000000000000000000000000000000001000000
+    minDepth: 1
+    maxDepth: 0
+  key:
+    shape: 1
+    singleCellCost: 1
+    quality: 2
+    description: 
+  coin:
+    shape: 1
+    singleCellCost: 0.02
+    quality: 0
+    description: 
+  shovel:
+    shape: 1
+    singleCellCost: 1
+    quality: 0
+    description: 

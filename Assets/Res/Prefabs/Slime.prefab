@@ -19,20 +19,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &114000001
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6484222696579327007}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4175b61d4a373e242bcbc9b305ad053a, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
-  level: {fileID: 11400000, guid: 607beabf70b1c93489c219dfb1364df5, type: 2}
-  gridOrigin: {x: 0, y: 0}
 --- !u!4 &8234078786819847511
 Transform:
   m_ObjectHideFlags: 0
@@ -121,3 +107,22 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &114000001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6484222696579327007}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4175b61d4a373e242bcbc9b305ad053a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  visionRange: 3
+  hearingRange: 0
+  smellRange: 0
+  patrolAllowsPassableElements: 0
+  chaseAllowsPassableElements: 0
+  level: {fileID: 11400000, guid: 607beabf70b1c93489c219dfb1364df5, type: 2}
+  gridOrigin: {x: 0, y: 0}

@@ -5,6 +5,11 @@ using UnityEngine;
 public class AdventurerView : MonoBehaviour
 {
     [SerializeField, Min(0.1f)] private float moveSpeed = 4f;
+    [SerializeField, Min(0.05f)] private float holdDelay = 0.2f;
+    private float pressedAt;
+    private bool trackingPress;
+    private bool following;
+    private Vector2Int? pointerCell;
 
     private static readonly Vector2Int[] Directions =
         { Vector2Int.left, Vector2Int.right, Vector2Int.up, Vector2Int.down };
@@ -18,6 +23,28 @@ public class AdventurerView : MonoBehaviour
     private Vector2Int stepCell;
     private float cellSize = 1f;
     private bool movingToStep;
+    public bool IsMoving => movingToStep;
+    public struct ScentMark
+    {
+        public Vector2Int cell;
+        public float time;
+    }
+    public const float ScentLifetime = 3f;
+    private readonly List<ScentMark> scentTrail = new List<ScentMark>();
+    public IReadOnlyList<ScentMark> ScentTrail => scentTrail;
+
+    private void LeaveScent(Vector2Int position)
+    {
+        float now = Time.time;
+        int last = scentTrail.Count - 1;
+        var mark = new ScentMark { cell = position, time = now };
+        if (last >= 0 && scentTrail[last].cell == position)
+            scentTrail[last] = mark;
+        else
+            scentTrail.Add(mark);
+        while (scentTrail.Count > 0 && now - scentTrail[0].time >= ScentLifetime)
+            scentTrail.RemoveAt(0);
+    }
     private Vector2Int? moveTarget;
     private bool digOnArrival;
     private Vector2Int facing = Vector2Int.down;
@@ -48,13 +75,14 @@ public class AdventurerView : MonoBehaviour
         }
 
         transform.position = CellCenter(cell);
+        LeaveScent(cell);
         PlayAnimation("Idle");
     }
 
     private void Update()
     {
-        if (Input.GetMouseButtonDown(0))
-            HandleGridClick(Input.mousePosition);
+        UpdatePointerMovement();
+        LeaveScent(WorldToCell(transform.position));
 
         if (animatedAction == "Dig")
         {
@@ -72,12 +100,46 @@ public class AdventurerView : MonoBehaviour
 
         // 只在真正到达点击格时挖掘，最近可达格仍然只是移动的备选终点。
         bool shouldDig = digOnArrival && moveTarget == cell;
+        if (shouldDig && trackingPress && !following)
+        {
+            PlayAnimation("Idle");
+            return;
+        }
         moveTarget = null;
         digOnArrival = false;
         PlayAnimation(shouldDig ? "Dig" : "Idle");
     }
 
-    private void HandleGridClick(Vector3 screenPosition)
+    private void UpdatePointerMovement()
+    {
+        if (Input.GetMouseButtonDown(0))
+        {
+            trackingPress = true;
+            following = false;
+            pressedAt = Time.unscaledTime;
+            pointerCell = null;
+            HandlePointerCell(Input.mousePosition, true);
+        }
+        else if (trackingPress && Input.GetMouseButton(0))
+        {
+            if (Time.unscaledTime - pressedAt < holdDelay) return;
+            following = true;
+            digOnArrival = false;
+            HandlePointerCell(Input.mousePosition, false);
+        }
+        else if (trackingPress)
+        {
+            if (following)
+            {
+                path.Clear();
+                moveTarget = null;
+            }
+            trackingPress = false;
+            following = false;
+        }
+    }
+
+    private void HandlePointerCell(Vector3 screenPosition, bool click)
     {
         if (inputCamera == null)
             return;
@@ -89,16 +151,27 @@ public class AdventurerView : MonoBehaviour
 
         Vector2Int requestedCell = WorldToCell(ray.GetPoint(distance));
         if (!level.ContainsCell(requestedCell))
+        {
+            if (!click && pointerCell.HasValue)
+            {
+                path.Clear();
+                moveTarget = null;
+                pointerCell = null;
+            }
             return;
+        }
+
+        if (!click && pointerCell == requestedCell) return;
+        pointerCell = requestedCell;
 
         if (moveTarget == requestedCell)
         {
-            digOnArrival = true;
+            digOnArrival = click;
             return;
         }
 
         moveTarget = requestedCell;
-        digOnArrival = requestedCell == WorldToCell(transform.position);
+        digOnArrival = click && requestedCell == WorldToCell(transform.position);
 
         if (digOnArrival && movingToStep && requestedCell == cell)
         {
@@ -190,6 +263,7 @@ public class AdventurerView : MonoBehaviour
             Vector3 destination = CellCenter(stepCell);
             float distance = Vector3.Distance(transform.position, destination);
             transform.position = Vector3.MoveTowards(transform.position, destination, remainingMovement);
+            LeaveScent(WorldToCell(transform.position));
             if (remainingMovement < distance)
                 return;
 

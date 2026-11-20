@@ -39,13 +39,13 @@ public class DigAdventureGameBoard : MonoBehaviour
         for (int i = 0; i < level.SceneElements.Count; i++)
         {
             var element = level.SceneElements[i];
-            int index = (int)element.Element;
+            int index = element.ElementId;
             if (elementSprites == null || index >= elementSprites.Length || index < 0 || !elementSprites[index])
                 continue;
             Sprite sprite = elementSprites[index];
             float size = element.IsGeology ? 1f : element.BoundsInCells.width;
             float scale = size / Mathf.Max(sprite.bounds.size.x, sprite.bounds.size.y);
-            var tile = new GameObject(element.Element.ToString());
+            var tile = new GameObject(GameDataConfig.GetElementName(index));
             tile.transform.SetParent(element.IsGeology ? geologyRoot : sceneryRoot, false);
             tile.transform.localScale = Vector3.one * scale;
             tile.transform.localPosition = new Vector3(element.Cell.x - center.x, center.y - element.Cell.y)
@@ -92,8 +92,10 @@ public class DigAdventureGameBoard : MonoBehaviour
         int count = level.Width * level.Height;
         int start = Random.Range(0, count);
         Vector2Int? adventurerCell = null;
-        Vector2Int? slimeCell = null;
-        Vector2Int? wolfCell = null;
+        long requested = (long)level.SlimeCount + level.WolfCount;
+        int needed = (int)System.Math.Min(count - 1, requested);
+        var spawnCells = new List<Vector2Int>();
+        var candidates = new List<Vector2Int>();
         var frontier = new Queue<(Vector2Int cell, int distance)>();
         var visited = new HashSet<Vector2Int>();
 
@@ -106,13 +108,15 @@ public class DigAdventureGameBoard : MonoBehaviour
             if (!adventurerCell.HasValue)
                 adventurerCell = cell;
 
-            if (TryFindMonsterSpawn(cell, null, frontier, visited, out Vector2Int candidate))
+            if (needed == 0) break;
+            FindMonsterSpawns(cell, needed, frontier, visited, candidates);
+            if (candidates.Count > spawnCells.Count)
             {
                 adventurerCell = cell;
-                slimeCell = candidate;
-                if (TryFindMonsterSpawn(cell, slimeCell, frontier, visited, out candidate))
-                    wolfCell = candidate;
-                break;
+                var previous = spawnCells;
+                spawnCells = candidates;
+                candidates = previous;
+                if (spawnCells.Count == needed) break;
             }
         }
 
@@ -128,33 +132,21 @@ public class DigAdventureGameBoard : MonoBehaviour
         adventurer.Initialize(level, origin, monsterRoot.lossyScale.x);
         adventurer.GetComponent<SpriteRenderer>().sortingOrder = level.SceneElements.Count + 1;
 
-        if (!slimeCell.HasValue)
+        for (int i = 0; i < spawnCells.Count; i++)
         {
-            Debug.LogWarning("当前关卡没有最短通行距离至少为 5 格的出生点组合，跳过 Slime 生成。", this);
+            MonsterPatrolView prefab = i < level.SlimeCount ? (MonsterPatrolView)slimePrefab : wolfPrefab;
+            var monster = Instantiate(prefab, SpawnPosition(spawnCells[i], center), monsterRoot.rotation, monsterRoot);
+            monster.Initialize(level, origin, monsterRoot.lossyScale.x, adventurer);
+            monster.GetComponent<SpriteRenderer>().sortingOrder = level.SceneElements.Count;
         }
-        else
-        {
-            var slime = Instantiate(slimePrefab, SpawnPosition(slimeCell.Value, center),
-                monsterRoot.rotation, monsterRoot);
-            slime.Initialize(level, origin, monsterRoot.lossyScale.x);
-            slime.GetComponent<SpriteRenderer>().sortingOrder = level.SceneElements.Count;
-        }
-
-        if (!wolfCell.HasValue)
-        {
-            Debug.LogWarning("当前关卡没有第二个与 Adventurer 距离至少 5 格的出生点，跳过 Wolf 生成。", this);
-            return;
-        }
-
-        var wolf = Instantiate(wolfPrefab, SpawnPosition(wolfCell.Value, center),
-            monsterRoot.rotation, monsterRoot);
-        wolf.Initialize(level, origin, monsterRoot.lossyScale.x, adventurer);
-        wolf.GetComponent<SpriteRenderer>().sortingOrder = level.SceneElements.Count;
+        if (spawnCells.Count < requested)
+            Debug.LogWarning($"怪物出生格不足：配置 {requested} 只，实际生成 {spawnCells.Count} 只。", this);
     }
 
-    private bool TryFindMonsterSpawn(Vector2Int start, Vector2Int? excluded,
-        Queue<(Vector2Int cell, int distance)> frontier, HashSet<Vector2Int> visited, out Vector2Int spawn)
+    private void FindMonsterSpawns(Vector2Int start, int needed,
+        Queue<(Vector2Int cell, int distance)> frontier, HashSet<Vector2Int> visited, List<Vector2Int> result)
     {
+        result.Clear();
         frontier.Clear();
         visited.Clear();
         frontier.Enqueue((start, 0));
@@ -163,11 +155,10 @@ public class DigAdventureGameBoard : MonoBehaviour
         while (frontier.Count > 0)
         {
             var (cell, distance) = frontier.Dequeue();
-            // BFS 首次到达的距离就是最短距离。若有更远的格，路上必经第 5 格。
-            if (distance >= MinSpawnDistance && (!excluded.HasValue || cell != excluded.Value))
+            if (distance >= MinSpawnDistance)
             {
-                spawn = cell;
-                return true;
+                result.Add(cell);
+                if (result.Count == needed) return;
             }
 
             foreach (Vector2Int offset in NeighborOffsets)
@@ -178,8 +169,6 @@ public class DigAdventureGameBoard : MonoBehaviour
             }
         }
 
-        spawn = default;
-        return false;
     }
 
     private Vector3 SpawnPosition(Vector2Int cell, Vector2 center)
