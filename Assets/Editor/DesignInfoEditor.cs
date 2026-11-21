@@ -19,9 +19,13 @@ public sealed class DesignInfoEditor : EditorWindow
     private Vector2 listScroll, textScroll;
     private GUIStyle noteStyle;
     private static readonly string ChestKey = Path.Combine("物品", nameof(GameDataConfig.ItemType.TreasureChest));
+    private static readonly string ShovelKey = Path.Combine("物品", nameof(GameDataConfig.ItemType.Shovel));
     internal static readonly string[] QualityNames = { "白色", "绿色", "蓝色", "紫色", "红色" };
     [SerializeField] private bool chestsExpanded;
+    [SerializeField] private bool shovelsExpanded;
     private ChestCatalog chestCatalog;
+    private const int DepthWeightsPerPage = 12;
+    private int depthWeightPage;
     private readonly Dictionary<string, MonsterPatrolView> monsterPrefabs = new Dictionary<string, MonsterPatrolView>();
     private readonly Dictionary<string, Sprite> previews = new Dictionary<string, Sprite>();
 
@@ -111,7 +115,9 @@ public sealed class DesignInfoEditor : EditorWindow
         {
             string text = File.Exists(path) ? File.ReadAllText(path) : "";
             GUI.FocusControl(null);
+            EditorGUIUtility.editingTextField = false;
             selected = name;
+            depthWeightPage = 0;
             original = draft = text;
             textScroll = Vector2.zero;
         }
@@ -164,6 +170,8 @@ public sealed class DesignInfoEditor : EditorWindow
 
     private void OnGUI()
     {
+        // Unity 2021 的 Mono 在未选择条目时会拒绝 Path.GetDirectoryName("")。
+        string selectedParent = string.IsNullOrEmpty(selected) ? null : Path.GetDirectoryName(selected);
         using (new EditorGUILayout.HorizontalScope())
         {
             using (new EditorGUILayout.VerticalScope(GUILayout.Width(200)))
@@ -184,18 +192,30 @@ public sealed class DesignInfoEditor : EditorWindow
                         if (!open) continue;
                         foreach (var entry in entries[name])
                         {
-                            if (entry.Key == ChestKey)
+                            if (entry.Key == ChestKey || entry.Key == ShovelKey)
                             {
-                                Rect chestRow = TreeRow(1, selected == ChestKey || (!chestsExpanded && Path.GetDirectoryName(selected ?? "") == ChestKey));
-                                bool openChest = EditorGUI.Foldout(chestRow, chestsExpanded, "宝箱", true);
-                                if (openChest && !chestsExpanded) Select(ChestKey);
-                                chestsExpanded = openChest;
-                                if (openChest)
+                                bool isChest = entry.Key == ChestKey;
+                                bool wasOpen = isChest ? chestsExpanded : shovelsExpanded;
+                                Rect row = TreeRow(1, selected == entry.Key ||
+                                    (!wasOpen && selectedParent == entry.Key));
+                                bool openTiers = EditorGUI.Foldout(row, wasOpen, entry.Value, true);
+                                if (openTiers && !wasOpen) Select(entry.Key);
+                                if (isChest) chestsExpanded = openTiers;
+                                else shovelsExpanded = openTiers;
+                                if (openTiers && isChest)
                                 {
                                     foreach (GameDataConfig.ItemQuality quality in Enum.GetValues(typeof(GameDataConfig.ItemQuality)))
                                     {
-                                        string key = Path.Combine(ChestKey, quality.ToString());
-                                        DrawTreeItem(key, QualityNames[(int)quality] + "宝箱", 2);
+                                        string key = Path.Combine(entry.Key, quality.ToString());
+                                        DrawTreeItem(key, QualityNames[(int)quality] + entry.Value, 2);
+                                    }
+                                }
+                                else if (openTiers && chestCatalog)
+                                {
+                                    foreach (var shovel in chestCatalog.Shovels.Where(item => item != null).OrderBy(item => item.Quality))
+                                    {
+                                        string key = Path.Combine(ShovelKey, shovel.Id);
+                                        DrawTreeItem(key, $"{QualityNames[(int)shovel.Quality]} · {shovel.DisplayName}", 2);
                                     }
                                 }
                                 continue;
@@ -214,15 +234,23 @@ public sealed class DesignInfoEditor : EditorWindow
                     EditorGUILayout.HelpBox("展开左侧栏目，选择要编辑的条目。", MessageType.Info);
                     return;
                 }
-                bool isChestTier = Enum.TryParse(Path.GetFileName(selected), out GameDataConfig.ItemQuality chestQuality)
-                    && Path.GetDirectoryName(selected) == ChestKey;
+                string parent = Path.GetDirectoryName(selected);
+                bool hasQuality = Enum.TryParse(Path.GetFileName(selected), out GameDataConfig.ItemQuality quality)
+                    && Enum.IsDefined(typeof(GameDataConfig.ItemQuality), quality);
+                bool isChestTier = hasQuality && parent == ChestKey;
+                var selectedShovel = parent == ShovelKey && chestCatalog
+                    ? chestCatalog.GetShovel(Path.GetFileName(selected)) : null;
                 using (new EditorGUILayout.HorizontalScope())
                 {
                     string category = Path.GetDirectoryName(selected);
                     string title = selected;
                     if (!string.IsNullOrEmpty(category) && entries.TryGetValue(category, out var items))
                         title = category + " / " + (items.Find(item => item.Key == selected).Value ?? Path.GetFileName(selected));
-                    GUILayout.Label(isChestTier ? "物品 / 宝箱 / " + QualityNames[(int)chestQuality] : title, EditorStyles.boldLabel);
+                    if (isChestTier)
+                        title = $"物品 / 宝箱 / {QualityNames[(int)quality]}";
+                    else if (selectedShovel != null)
+                        title = $"物品 / 铲子 / {selectedShovel.DisplayName}";
+                    GUILayout.Label(title, EditorStyles.boldLabel);
                     GUILayout.FlexibleSpace();
                     using (new EditorGUI.DisabledScope(!hasUnsavedChanges))
                         if (GUILayout.Button("保存")) SaveChanges();
@@ -244,8 +272,9 @@ public sealed class DesignInfoEditor : EditorWindow
                 using (var scroll = new EditorGUILayout.ScrollViewScope(textScroll))
                 {
                     textScroll = scroll.scrollPosition;
-                    if (isChestTier) DrawChestSettings(chestQuality);
-                    else if (Path.GetDirectoryName(selected) == "物品" && selected != ChestKey &&
+                    if (isChestTier) DrawChestSettings(quality);
+                    else if (selectedShovel != null) DrawShovelSettings(selectedShovel);
+                    else if (parent == "物品" && selected != ChestKey && selected != ShovelKey &&
                         Enum.TryParse(Path.GetFileName(selected), out GameDataConfig.ItemType itemType))
                         DrawOrdinaryItem(itemType);
                     if (noteStyle == null) noteStyle = new GUIStyle(EditorStyles.textArea) { wordWrap = true };
@@ -290,9 +319,19 @@ public sealed class DesignInfoEditor : EditorWindow
             EditorGUILayout.LabelField("出现的地下深度（含两端）", EditorStyles.boldLabel);
             var minDepth = tier.FindPropertyRelative("minDepth");
             var maxDepth = tier.FindPropertyRelative("maxDepth");
-            minDepth.intValue = Mathf.Max(1, EditorGUILayout.DelayedIntField("最浅层数", minDepth.intValue));
-            int deepest = Mathf.Max(0, EditorGUILayout.DelayedIntField("最深层数（0 为不限）", maxDepth.intValue));
-            maxDepth.intValue = deepest == 0 ? 0 : Mathf.Max(minDepth.intValue, deepest);
+            // 切换品质时会复用这两个控件的位置，避免延迟提交把旧输入写入新条目。
+            EditorGUI.BeginChangeCheck();
+            int shallowest = EditorGUILayout.IntField("最浅层数", minDepth.intValue);
+            int deepest = EditorGUILayout.IntField("最深层数（0 为不限）", maxDepth.intValue);
+            if (EditorGUI.EndChangeCheck())
+            {
+                minDepth.intValue = Mathf.Max(1, shallowest);
+                maxDepth.intValue = deepest <= 0 ? 0 : Mathf.Max(minDepth.intValue, deepest);
+                depthWeightPage = 0;
+            }
+
+            DrawDepthWeights(tier.FindPropertyRelative("depthWeights"), Mathf.Max(1, minDepth.intValue),
+                maxDepth.intValue);
 
             var capacity = tier.FindPropertyRelative("capacity");
             Vector2Int size = capacity.vector2IntValue;
@@ -323,6 +362,92 @@ public sealed class DesignInfoEditor : EditorWindow
         EditorGUILayout.LabelField("设计笔记", EditorStyles.boldLabel);
     }
 
+    private void DrawDepthWeights(SerializedProperty weights, int firstDepth, int maxDepth)
+    {
+        EditorGUILayout.LabelField("生成层数（权重 / 实际概率）", EditorStyles.boldLabel);
+        if (maxDepth == 0)
+            EditorGUILayout.LabelField("最深层数不限时，关卡生成使用最浅层。", EditorStyles.wordWrappedMiniLabel);
+
+        int lastDepth = Mathf.Max(firstDepth, maxDepth);
+        int depthCount = lastDepth - firstDepth + 1;
+        long total = depthCount;
+        for (int i = weights.arraySize - 1; i >= 0; i--)
+        {
+            var entry = weights.GetArrayElementAtIndex(i);
+            int depth = entry.FindPropertyRelative("depth").intValue;
+            if (depth < firstDepth || depth > lastDepth)
+                weights.DeleteArrayElementAtIndex(i);
+            else
+                total += Mathf.Max(0, entry.FindPropertyRelative("weight").intValue) - 1L;
+        }
+
+        if (total <= 0)
+        {
+            SetDepthWeight(weights, firstDepth, 1);
+            total = 1;
+        }
+
+        int lastPage = (depthCount - 1) / DepthWeightsPerPage;
+        depthWeightPage = Mathf.Clamp(depthWeightPage, 0, lastPage);
+        if (lastPage > 0)
+            depthWeightPage = Mathf.Clamp(EditorGUILayout.IntField("权重页码", depthWeightPage + 1),
+                1, lastPage + 1) - 1;
+
+        int start = depthWeightPage * DepthWeightsPerPage;
+        int count = Mathf.Min(DepthWeightsPerPage, depthCount - start);
+        for (int i = 0; i < count; i++)
+        {
+            int depth = firstDepth + start + i;
+            int index = FindDepthWeightIndex(weights, depth);
+            int current = 1;
+            if (index < weights.arraySize)
+            {
+                var entry = weights.GetArrayElementAtIndex(index);
+                if (entry.FindPropertyRelative("depth").intValue == depth)
+                    current = Mathf.Max(0, entry.FindPropertyRelative("weight").intValue);
+            }
+
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                int next = Mathf.Max(0, EditorGUILayout.IntField($"第 {depth} 层", current));
+                if (next != current && total - current + next > 0)
+                {
+                    SetDepthWeight(weights, depth, next);
+                    total += (long)next - current;
+                    current = next;
+                }
+                GUILayout.Label(((double)current / total).ToString("P1"), GUILayout.Width(64));
+            }
+        }
+    }
+
+    private static int FindDepthWeightIndex(SerializedProperty weights, int depth)
+    {
+        int low = 0;
+        int high = weights.arraySize;
+        while (low < high)
+        {
+            int middle = low + (high - low) / 2;
+            if (weights.GetArrayElementAtIndex(middle).FindPropertyRelative("depth").intValue < depth)
+                low = middle + 1;
+            else
+                high = middle;
+        }
+        return low;
+    }
+
+    private static void SetDepthWeight(SerializedProperty weights, int depth, int weight)
+    {
+        int index = FindDepthWeightIndex(weights, depth);
+        if (index == weights.arraySize ||
+            weights.GetArrayElementAtIndex(index).FindPropertyRelative("depth").intValue != depth)
+            weights.InsertArrayElementAtIndex(index);
+
+        var entry = weights.GetArrayElementAtIndex(index);
+        entry.FindPropertyRelative("depth").intValue = depth;
+        entry.FindPropertyRelative("weight").intValue = weight;
+    }
+
     private void DrawOrdinaryItem(GameDataConfig.ItemType type)
     {
         if (!chestCatalog) return;
@@ -333,6 +458,48 @@ public sealed class DesignInfoEditor : EditorWindow
         }
         EditorGUILayout.LabelField("设计笔记", EditorStyles.boldLabel);
     }
+
+    private void DrawShovelSettings(ChestCatalog.Shovel selectedShovel)
+    {
+        using (var data = new SerializedObject(chestCatalog))
+        {
+            var items = data.FindProperty("shovels");
+            int index = 0;
+            while (index < items.arraySize && !ReferenceEquals(chestCatalog.Shovels[index], selectedShovel))
+                index++;
+            if (index == items.arraySize) return;
+
+            var shovel = items.GetArrayElementAtIndex(index);
+            EditorGUILayout.PropertyField(shovel.FindPropertyRelative("displayName"), new GUIContent("名称"));
+            Rect idField = EditorGUI.PrefixLabel(EditorGUILayout.GetControlRect(), new GUIContent("铲子编号"));
+            EditorGUI.SelectableLabel(idField, selectedShovel.Id);
+            DrawItemSettings(shovel, null);
+
+            EditorGUILayout.LabelField("探测", EditorStyles.boldLabel);
+            EditorGUILayout.PropertyField(shovel.FindPropertyRelative("scanRadius"),
+                new GUIContent("探测广度（格）", "以冒险者为原点的曼哈顿距离，忽略场景元素阻挡。"));
+            EditorGUILayout.PropertyField(shovel.FindPropertyRelative("scanDepth"),
+                new GUIContent("探测深度（层）", "在每个格当前已挖深度的基础上继续向下探测。"));
+            var precision = shovel.FindPropertyRelative("scanPrecision");
+            precision.enumValueIndex = EditorGUILayout.Popup("探测精度", precision.enumValueIndex,
+                ScanPrecisionNames);
+            EditorGUILayout.PropertyField(shovel.FindPropertyRelative("scanSeconds"), new GUIContent("探测耗时（秒）"));
+
+            EditorGUILayout.LabelField("挖掘", EditorStyles.boldLabel);
+            var mode = shovel.FindPropertyRelative("digMode");
+            mode.enumValueIndex = EditorGUILayout.Popup("挖掘方式", mode.enumValueIndex, DigModeNames);
+            if (mode.enumValueIndex == (int)ChestCatalog.DigMode.Manual)
+                EditorGUILayout.PropertyField(shovel.FindPropertyRelative("clicksPerLayer"), new GUIContent("挖掘速度（次/层）"));
+            else
+                EditorGUILayout.PropertyField(shovel.FindPropertyRelative("digSecondsPerLayer"), new GUIContent("挖掘速度（秒/层）"));
+
+            if (data.ApplyModifiedProperties()) AssetDatabase.SaveAssetIfDirty(chestCatalog);
+        }
+        EditorGUILayout.LabelField("设计笔记", EditorStyles.boldLabel);
+    }
+
+    private static readonly string[] ScanPrecisionNames = { "大致范围和数量", "准确网格和数量", "准确网格、数量和品质" };
+    private static readonly string[] DigModeNames = { "手动", "自动" };
 
     private static void DrawItemSettings(SerializedProperty item, GameDataConfig.ItemQuality? fixedQuality)
     {

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using SceneElement = GameDataConfig.SceneElement;
 using GeologyElement = GameDataConfig.GeologyElement;
+using ItemQuality = GameDataConfig.ItemQuality;
 
 public sealed class LevelData : ScriptableObject, ISerializationCallbackReceiver
 {
@@ -16,6 +17,28 @@ public sealed class LevelData : ScriptableObject, ISerializationCallbackReceiver
     [SerializeField, Min(0)] private int slimeCount = 1;
     [SerializeField, Min(0)] private int wolfCount = 1;
     [SerializeField] private int[] chestCounts = new int[(int)GameDataConfig.ItemQuality.Red + 1];
+    [SerializeField] private List<ChestPlacement> chestPlacements = new List<ChestPlacement>();
+    public IReadOnlyList<ChestPlacement> ChestPlacements => chestPlacements;
+
+    [Serializable]
+    public struct ChestPlacement
+    {
+        [SerializeField] private Vector2Int cell;
+        [SerializeField] private ItemQuality quality;
+        [SerializeField] private int depth;
+
+        public Vector2Int Cell => cell;
+        public ItemQuality Quality => quality;
+        public int Depth => Mathf.Max(1, depth);
+
+        internal ChestPlacement(Vector2Int cell, ItemQuality quality, int depth)
+        {
+            this.cell = cell;
+            this.quality = quality;
+            this.depth = depth;
+        }
+    }
+
     public int GetChestCount(GameDataConfig.ItemQuality quality)
     {
         int index = (int)quality;
@@ -26,6 +49,76 @@ public sealed class LevelData : ScriptableObject, ISerializationCallbackReceiver
     public int WolfCount => Mathf.Max(0, wolfCount);
     public int Height => height;
     public IReadOnlyList<ElementPlacement> SceneElements => sceneElements;
+
+    public static LevelData FromJson(string json, string levelName)
+    {
+        var data = CreateInstance<LevelData>();
+        try
+        {
+            JsonUtility.FromJsonOverwrite(json, data);
+            data.name = levelName;
+            data.OnValidate();
+            return data;
+        }
+        catch
+        {
+            DestroyImmediate(data);
+            throw;
+        }
+    }
+
+#if UNITY_EDITOR
+    public bool TryGenerateChestPlacements(ChestCatalog catalog, out long requestedCount, out int availableCount)
+    {
+        requestedCount = 0;
+        for (int quality = 0; quality <= (int)ItemQuality.Red; quality++)
+            requestedCount += GetChestCount((ItemQuality)quality);
+
+        var blocked = new HashSet<Vector2Int>(GetManuallyBlockedCells());
+        var rules = SceneElementRules.Shared;
+        foreach (var placement in sceneElements)
+        {
+            if (!CanOccupyCells(placement) ||
+                (rules && (rules.Get(placement.Element) & SceneElementRules.Traits.Passable) != 0))
+                continue;
+
+            // 即使格子被手动标记为可通行，宝箱也避开不可穿过元素的完整占格。
+            foreach (Vector2Int offset in placement.OccupiedCellsFromAnchor)
+                blocked.Add(placement.Cell + offset);
+        }
+
+        var candidates = new List<Vector2Int>();
+        for (int y = 0; y < height; y++)
+        for (int x = 0; x < width; x++)
+        {
+            var cell = new Vector2Int(x, y);
+            if (!blocked.Contains(cell))
+                candidates.Add(cell);
+        }
+
+        availableCount = candidates.Count;
+        if (requestedCount > availableCount)
+            return false;
+
+        var generated = new List<ChestPlacement>((int)requestedCount);
+        for (int quality = 0; quality <= (int)ItemQuality.Red; quality++)
+        {
+            int count = GetChestCount((ItemQuality)quality);
+            if (count == 0) continue;
+            var tier = catalog.Get((ItemQuality)quality);
+            for (int i = 0; i < count; i++)
+            {
+                int next = generated.Count;
+                int chosen = UnityEngine.Random.Range(next, availableCount);
+                generated.Add(new ChestPlacement(candidates[chosen], (ItemQuality)quality, tier.RollDepth()));
+                candidates[chosen] = candidates[next];
+            }
+        }
+
+        chestPlacements = generated;
+        return true;
+    }
+#endif
 
     [Serializable]
     private struct ManualOccupancy
@@ -135,6 +228,16 @@ public sealed class LevelData : ScriptableObject, ISerializationCallbackReceiver
             }
         }
         manualOccupancyIndices = null;
+
+        if (change < 0)
+            chestPlacements.RemoveAll(placement => (horizontal ? placement.Cell.x : placement.Cell.y) == edge);
+        for (int i = 0; i < chestPlacements.Count; i++)
+        {
+            ChestPlacement placement = chestPlacements[i];
+            int coordinate = horizontal ? placement.Cell.x : placement.Cell.y;
+            if (coordinate >= edge)
+                chestPlacements[i] = new ChestPlacement(placement.Cell + shift, placement.Quality, placement.Depth);
+        }
 
         width += shift.x;
         height += shift.y;

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using UnityEditor;
 using UnityEngine;
 using SceneElement = GameDataConfig.SceneElement;
@@ -8,7 +9,8 @@ using GeologyElement = GameDataConfig.GeologyElement;
 
 public sealed class LevelEditor : EditorWindow
 {
-    private const string LevelFolder = "Assets/Res/Level";
+    private const string LegacyLevelFolder = "Assets/Res/Level";
+    private const string LevelFolder = "Assets/Resources/Levels";
     private const string LevelPrefix = "Level_";
     private const string SceneElementsAtlas = "Assets/Res/Art/Sprites/all_scene_props.png";
     private const string TreesAtlas = "Assets/Res/Art/Sprites/trees.png";
@@ -27,6 +29,7 @@ public sealed class LevelEditor : EditorWindow
     private const float PaletteCardPadding = 5f;
     private const float PaletteScrollGutter = 30f;
     [SerializeField] private LevelData selectedLevel;
+    [SerializeField] private string selectedLevelName;
     [SerializeField] private bool gridEditingExpanded = true;
     [SerializeField] private bool monstersExpanded;
     [SerializeField] private bool chestsExpanded;
@@ -39,12 +42,15 @@ public sealed class LevelEditor : EditorWindow
     [SerializeField] private bool editingGridOccupancy = true;
     [SerializeField] private float sidebarWidth = DefaultSidebarWidth;
     private readonly List<LevelData> levels = new List<LevelData>();
+    private readonly Dictionary<string, string> levelSnapshots = new Dictionary<string, string>();
+    private readonly Dictionary<string, string> loadedJson = new Dictionary<string, string>();
     private readonly Dictionary<int, Sprite> elementSprites = new Dictionary<int, Sprite>();
     private readonly List<int> scenePalette = new List<int>();
     private readonly List<int> geologyPalette = new List<int>();
     private readonly Dictionary<int, SceneElementFootprint> footprints = new Dictionary<int, SceneElementFootprint>();
     private readonly Dictionary<string, Hash128> footprintAtlasHashes = new Dictionary<string, Hash128>();
     private Vector2 listScroll;
+    private Vector2 detailsScroll;
     private Vector2 gridScroll;
     private Vector2 paletteScroll;
     private Vector2 geologyPaletteScroll;
@@ -71,13 +77,14 @@ public sealed class LevelEditor : EditorWindow
     private bool moveChanged;
 
     private float GridCellSize => BaseCellSize * gridZoom;
-    private float MaxSidebarWidth => Mathf.Max(MinSidebarWidth, position.width - MinGridPanelWidth - SplitterWidth - 16f);
+    private float MaxSidebarWidth => Mathf.Max(MinSidebarWidth,
+        (position.width - MinGridPanelWidth - SplitterWidth - 24f) * 0.5f);
 
     [MenuItem("Tools/关卡编辑器")]
     private static void Open()
     {
         var window = GetWindow<LevelEditor>("关卡编辑器");
-        window.minSize = new Vector2(592, 300);
+        window.minSize = new Vector2(696, 300);
     }
 
     private void OnEnable()
@@ -92,6 +99,12 @@ public sealed class LevelEditor : EditorWindow
         FinishElementMove();
         FinishGridStroke();
         Undo.undoRedoPerformed -= OnUndoRedo;
+        foreach (var level in levels)
+            DestroyImmediate(level);
+        levels.Clear();
+        levelSnapshots.Clear();
+        loadedJson.Clear();
+        selectedLevel = null;
     }
 
     private void OnLostFocus()
@@ -103,6 +116,10 @@ public sealed class LevelEditor : EditorWindow
     private void OnUndoRedo()
     {
         editingPlacementIndex = -1;
+        foreach (var level in levels)
+            if (levelSnapshots.TryGetValue(level.name, out string snapshot) &&
+                snapshot != JsonUtility.ToJson(level, true))
+                SaveLevel(level);
         Repaint();
     }
 
@@ -223,28 +240,77 @@ public sealed class LevelEditor : EditorWindow
 
     private void ReloadLevels()
     {
+        var previous = new Dictionary<string, LevelData>();
+        foreach (var level in levels)
+            previous.Add(level.name, level);
         levels.Clear();
-        if (AssetDatabase.IsValidFolder(LevelFolder))
+        if (Directory.Exists(LevelFolder))
+            foreach (string path in Directory.GetFiles(LevelFolder, LevelPrefix + "*.json"))
+            {
+                string name = Path.GetFileNameWithoutExtension(path);
+                try
+                {
+                    string json = File.ReadAllText(path);
+                    if (previous.TryGetValue(name, out var existing) &&
+                        loadedJson.TryGetValue(name, out string snapshot) && snapshot == json)
+                    {
+                        levels.Add(existing);
+                        previous.Remove(name);
+                    }
+                    else
+                    {
+                        var loaded = LevelData.FromJson(json, name);
+                        BakeMissingOccupancy(loaded);
+                        levels.Add(loaded);
+                        loadedJson[name] = json;
+                        levelSnapshots[name] = JsonUtility.ToJson(loaded, true);
+                    }
+                }
+                catch (Exception exception) when (exception is IOException || exception is ArgumentException ||
+                                                   exception is UnauthorizedAccessException)
+                {
+                    Debug.LogError($"无法读取关卡 {path}：{exception.Message}");
+                }
+            }
+
+        if (AssetDatabase.IsValidFolder(LegacyLevelFolder))
         {
-            foreach (string guid in AssetDatabase.FindAssets("t:LevelData", new[] { LevelFolder }))
+            foreach (string guid in AssetDatabase.FindAssets("t:LevelData", new[] { LegacyLevelFolder }))
             {
                 var level = AssetDatabase.LoadAssetAtPath<LevelData>(AssetDatabase.GUIDToAssetPath(guid));
-                if (level != null)
+                if (level == null || File.Exists(GetLevelPath(level.name))) continue;
+                if (!loadedJson.ContainsKey(level.name) && previous.TryGetValue(level.name, out var existing))
                 {
-                    BakeMissingOccupancy(level);
-                    levels.Add(level);
+                    levels.Add(existing);
+                    previous.Remove(level.name);
+                    continue;
                 }
+
+                var copy = Instantiate(level);
+                copy.name = level.name;
+                BakeMissingOccupancy(copy);
+                levels.Add(copy);
+                loadedJson.Remove(copy.name);
+                levelSnapshots[copy.name] = JsonUtility.ToJson(copy, true);
             }
         }
 
+        foreach (var level in previous.Values)
+        {
+            if (!levels.Exists(current => current.name == level.name))
+            {
+                levelSnapshots.Remove(level.name);
+                loadedJson.Remove(level.name);
+            }
+            DestroyImmediate(level);
+        }
         levels.Sort((a, b) => EditorUtility.NaturalCompare(a.name, b.name));
         if (!levels.Contains(selectedLevel))
-            SelectLevel(null);
+            SelectLevel(levels.Find(level => level.name == selectedLevelName));
     }
 
     private void BakeMissingOccupancy(LevelData level)
     {
-        bool changed = false;
         for (int i = 0; i < level.SceneElements.Count; i++)
         {
             var placement = level.SceneElements[i];
@@ -253,20 +319,39 @@ public sealed class LevelEditor : EditorWindow
 
             Vector2Int[] cells = CalculateOccupancy(placement.ElementId, placement.Scale);
             if (cells != null)
-                changed |= level.SetSceneElementTransform(i, placement.Scale, cells);
+                level.SetSceneElementTransform(i, placement.Scale, cells);
         }
+    }
 
-        if (changed)
+    private static string GetLevelPath(string name) => $"{LevelFolder}/{name}.json";
+
+    private bool SaveLevel(LevelData level)
+    {
+        string path = GetLevelPath(level.name);
+        string json = JsonUtility.ToJson(level, true);
+        try
         {
-            EditorUtility.SetDirty(level);
-            AssetDatabase.SaveAssetIfDirty(level);
+            EnsureFolder(LevelFolder);
+            File.WriteAllText(path, json);
+            levelSnapshots[level.name] = json;
+            loadedJson[level.name] = json;
+            AssetDatabase.ImportAsset(path);
+            return true;
+        }
+        catch (Exception exception) when (exception is IOException || exception is UnauthorizedAccessException)
+        {
+            Debug.LogError($"无法保存关卡 {path}：{exception.Message}");
+            ShowNotification(new GUIContent("关卡 JSON 保存失败，请查看 Console。"));
+            return false;
         }
     }
 
     private void SelectLevel(LevelData level)
     {
         selectedLevel = level;
+        selectedLevelName = level ? level.name : null;
         gridScroll = Vector2.zero;
+        detailsScroll = Vector2.zero;
         editingPlacementIndex = -1;
     }
 
@@ -283,11 +368,10 @@ public sealed class LevelEditor : EditorWindow
 
     private void CreateLevel()
     {
-        EnsureFolder(LevelFolder);
         long nextNumber = 1;
-        foreach (string guid in AssetDatabase.FindAssets("", new[] { LevelFolder }))
+        foreach (var existing in levels)
         {
-            string name = Path.GetFileNameWithoutExtension(AssetDatabase.GUIDToAssetPath(guid));
+            string name = existing.name;
             if (name.StartsWith(LevelPrefix, StringComparison.Ordinal) &&
                 int.TryParse(name.Substring(LevelPrefix.Length), out int number))
             {
@@ -295,11 +379,17 @@ public sealed class LevelEditor : EditorWindow
             }
         }
 
-        string path = AssetDatabase.GenerateUniqueAssetPath($"{LevelFolder}/{LevelPrefix}{nextNumber}.asset");
+        while (File.Exists(GetLevelPath($"{LevelPrefix}{nextNumber}")))
+            nextNumber++;
+
         var level = CreateInstance<LevelData>();
-        AssetDatabase.CreateAsset(level, path);
-        AssetDatabase.SaveAssetIfDirty(level);
-        ReloadLevels();
+        level.name = $"{LevelPrefix}{nextNumber}";
+        if (!SaveLevel(level))
+        {
+            DestroyImmediate(level);
+            return;
+        }
+        levels.Add(level);
         SelectLevel(level);
         listScroll.y = float.MaxValue;
     }
@@ -351,7 +441,7 @@ public sealed class LevelEditor : EditorWindow
                         {
                             EditorGUILayout.PropertyField(data.FindProperty("slimeCount"), new GUIContent("史莱姆数量"));
                             EditorGUILayout.PropertyField(data.FindProperty("wolfCount"), new GUIContent("狼数量"));
-                            if (data.ApplyModifiedProperties()) AssetDatabase.SaveAssetIfDirty(selectedLevel);
+                            if (data.ApplyModifiedProperties()) SaveLevel(selectedLevel);
                         }
                     }
                     chestsExpanded = EditorGUILayout.Foldout(chestsExpanded, "宝箱", true);
@@ -369,23 +459,63 @@ public sealed class LevelEditor : EditorWindow
                 if (selectedLevel == null)
                 {
                     EditorGUILayout.HelpBox(levels.Count == 0 ? "请先新建关卡。" : "请从左侧选择关卡。", MessageType.Info);
-                    return;
                 }
-
-                using (new EditorGUILayout.HorizontalScope())
+                else
                 {
-                    var previewLabel = editingGridOccupancy
-                        ? new GUIContent("网格类型编辑", "左键循环切换类型，右键设为畅通。")
-                        : new GUIContent("网格预览", "Ctrl＋左键选中场景元素，Ctrl＋Shift＋左键切换重叠元素。");
-                    EditorGUILayout.LabelField(previewLabel,
-                        EditorStyles.boldLabel, GUILayout.ExpandWidth(false));
-                    GUILayout.FlexibleSpace();
-                    showAllOccupiedCells = GUILayout.Toggle(showAllOccupiedCells,
-                        new GUIContent("显示网格类型", "橙色阻移动，蓝色阻视野，紫色两者都阻。"), GUILayout.ExpandWidth(false));
+                    using (new EditorGUILayout.HorizontalScope())
+                    {
+                        var previewLabel = editingGridOccupancy
+                            ? new GUIContent("网格类型编辑", "左键循环切换类型，右键设为畅通。")
+                            : new GUIContent("网格预览", "Ctrl＋左键选中场景元素，Ctrl＋Shift＋左键切换重叠元素。");
+                        EditorGUILayout.LabelField(previewLabel, EditorStyles.boldLabel, GUILayout.ExpandWidth(false));
+                        GUILayout.FlexibleSpace();
+                        showAllOccupiedCells = GUILayout.Toggle(showAllOccupiedCells,
+                            new GUIContent("显示网格类型", "橙色阻移动，蓝色阻视野，紫色两者都阻。"), GUILayout.ExpandWidth(false));
+                    }
+                    Rect viewport = GUILayoutUtility.GetRect(0, 0, GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true));
+                    DrawGrid(viewport, selectedLevel.Width, selectedLevel.Height, gridControlId);
                 }
-                Rect viewport = GUILayoutUtility.GetRect(0, 0, GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true));
-                DrawGrid(viewport, selectedLevel.Width, selectedLevel.Height, gridControlId);
             }
+
+            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox,
+                       GUILayout.Width(currentSidebarWidth), GUILayout.ExpandHeight(true)))
+                DrawLevelDetails();
+        }
+    }
+
+    private void DrawLevelDetails()
+    {
+        EditorGUILayout.LabelField("关卡详情", EditorStyles.boldLabel);
+        if (!selectedLevel)
+        {
+            EditorGUILayout.LabelField("请先选择关卡。");
+            return;
+        }
+
+        var chests = selectedLevel.ChestPlacements;
+        EditorGUILayout.LabelField($"宝箱 · {chests.Count} 个");
+        if (chests.Count == 0)
+        {
+            EditorGUILayout.LabelField("在左侧宝箱栏目点击「生成」。");
+            return;
+        }
+
+        var details = new StringBuilder("网格坐标从左上角 (0, 0) 开始。");
+        foreach (var chest in chests)
+        {
+            int quality = (int)chest.Quality;
+            string qualityName = quality >= 0 && quality < DesignInfoEditor.QualityNames.Length
+                ? DesignInfoEditor.QualityNames[quality] : chest.Quality.ToString();
+            details.AppendLine().Append($"{qualityName}  ({chest.Cell.x}, {chest.Cell.y})  深度 {chest.Depth} 层");
+        }
+        string result = details.ToString();
+        if (GUILayout.Button("复制结果"))
+            EditorGUIUtility.systemCopyBuffer = result;
+
+        using (var scroll = new EditorGUILayout.ScrollViewScope(detailsScroll))
+        {
+            detailsScroll = scroll.scrollPosition;
+            EditorGUILayout.TextArea(result, EditorStyles.wordWrappedLabel);
         }
     }
 
@@ -532,8 +662,33 @@ public sealed class LevelEditor : EditorWindow
                 var count = counts.GetArrayElementAtIndex(i);
                 count.intValue = Mathf.Max(0, EditorGUILayout.DelayedIntField(names[i] + "宝箱数量", count.intValue));
             }
-            if (data.ApplyModifiedProperties()) AssetDatabase.SaveAssetIfDirty(selectedLevel);
+            if (data.ApplyModifiedProperties()) SaveLevel(selectedLevel);
+
+            if (GUILayout.Button("生成"))
+                GenerateChests();
+            EditorGUILayout.LabelField($"已生成 {selectedLevel.ChestPlacements.Count} 个宝箱");
         }
+    }
+
+    private void GenerateChests()
+    {
+        var catalog = Resources.Load<ChestCatalog>("ChestCatalog");
+        if (!catalog)
+        {
+            ShowNotification(new GUIContent("缺少 ChestCatalog 宝箱配置。"));
+            return;
+        }
+
+        BakeMissingOccupancy(selectedLevel);
+        Undo.RecordObject(selectedLevel, "生成宝箱");
+        if (!selectedLevel.TryGenerateChestPlacements(catalog, out long requested, out int available))
+        {
+            ShowNotification(new GUIContent($"需要 {requested} 格，当前只有 {available} 格可放置宝箱。"));
+            return;
+        }
+
+        SaveLevel(selectedLevel);
+        Repaint();
     }
 
     private void DrawGridEditing()
@@ -563,7 +718,7 @@ public sealed class LevelEditor : EditorWindow
             width.intValue = Mathf.Clamp(newWidth, GameDataConfig.MinLevelGridSize, GameDataConfig.MaxLevelGridSize);
             height.intValue = Mathf.Clamp(newHeight, GameDataConfig.MinLevelGridSize, GameDataConfig.MaxLevelGridSize);
             if (serializedLevel.ApplyModifiedProperties())
-                AssetDatabase.SaveAssetIfDirty(selectedLevel);
+                SaveLevel(selectedLevel);
         }
 
         DrawGridResizeButtons(true);
@@ -606,7 +761,7 @@ public sealed class LevelEditor : EditorWindow
             if (!expand)
                 editingPlacementIndex = -1;
             EditorUtility.SetDirty(selectedLevel);
-            AssetDatabase.SaveAssetIfDirty(selectedLevel);
+            SaveLevel(selectedLevel);
             Repaint();
             GUIUtility.ExitGUI();
         }
@@ -642,7 +797,7 @@ public sealed class LevelEditor : EditorWindow
 
         Undo.RecordObject(selectedLevel, "调整场景元素");
         if (ApplyElementScale(placement.ElementId, scale))
-            AssetDatabase.SaveAssetIfDirty(selectedLevel);
+            SaveLevel(selectedLevel);
     }
 
     private static void GetGridRects(Rect viewport, Vector2 gridSize, out Rect grid, out Rect visibleArea)
@@ -718,6 +873,8 @@ public sealed class LevelEditor : EditorWindow
             DrawGridLayer(grid.position, visibleContent, true);
             DrawGridLayer(grid.position, visibleContent, false);
             DrawGridOccupancy(grid.position, visibleContent);
+            if (chestsExpanded)
+                DrawGridChests(grid.position, visibleContent);
         }
 
         HandleGridPointer(grid, mouseInsideViewport, controlId);
@@ -735,6 +892,21 @@ public sealed class LevelEditor : EditorWindow
             Rect target = GetPlacementRect(gridOrigin, placement);
             if (target.Overlaps(visibleContent))
                 DrawElementSprite(target, placement.ElementId);
+        }
+    }
+
+    private void DrawGridChests(Vector2 gridOrigin, Rect visibleContent)
+    {
+        foreach (var chest in selectedLevel.ChestPlacements)
+        {
+            var rect = new Rect(gridOrigin + (Vector2)chest.Cell * GridCellSize, Vector2.one * GridCellSize);
+            if (!rect.Overlaps(visibleContent)) continue;
+
+            float size = Mathf.Min(GridCellSize - 2f, 20f);
+            var badge = new Rect(rect.center - Vector2.one * (size * 0.5f), Vector2.one * size);
+            EditorGUI.DrawRect(badge, new Color32(117, 77, 29, 255));
+            GUI.Label(badge, new GUIContent("箱", DesignInfoEditor.QualityNames[(int)chest.Quality] + "宝箱"),
+                EditorStyles.centeredGreyMiniLabel);
         }
     }
 
@@ -842,7 +1014,7 @@ public sealed class LevelEditor : EditorWindow
         {
             Undo.RecordObject(selectedLevel, "缩放场景元素");
             if (ApplyElementScale(placement.ElementId, scale))
-                AssetDatabase.SaveAssetIfDirty(selectedLevel);
+                SaveLevel(selectedLevel);
         }
 
         return true;
@@ -1001,7 +1173,7 @@ public sealed class LevelEditor : EditorWindow
         if (GUIUtility.hotControl == moveControlId)
             GUIUtility.hotControl = 0;
         if (moveChanged && moveLevel != null)
-            AssetDatabase.SaveAssetIfDirty(moveLevel);
+            SaveLevel(moveLevel);
 
         moveControlId = 0;
         moveLevel = null;
@@ -1074,7 +1246,7 @@ public sealed class LevelEditor : EditorWindow
         {
             Undo.FlushUndoRecordObjects();
             Undo.CollapseUndoOperations(strokeUndoGroup);
-            AssetDatabase.SaveAssetIfDirty(strokeLevel);
+            SaveLevel(strokeLevel);
         }
 
         strokeChanged = false;

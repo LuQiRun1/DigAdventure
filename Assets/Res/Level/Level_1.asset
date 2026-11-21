@@ -1056,3 +1056,7 @@ MonoBehaviour:
   - cell: {x: 2, y: 4}
     blocked: 1
     blocksSight: 1
+  slimeCount: 1
+  wolfCount: 1
+  chestCounts: 0000000000000000000000000000000000000000
+  chestPlacements: []

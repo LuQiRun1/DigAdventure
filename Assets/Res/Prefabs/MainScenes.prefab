@@ -145,6 +145,7 @@ MonoBehaviour:
   screenX: 0.5
   screenY: 0.5
   geologyRoot: {fileID: 5737762534592951073}
+  geologyTilePrefab: {fileID: 1377630355468094666, guid: 3b66e7e5ce1395d4baec3a3dd5fb1aca, type: 3}
   sceneryRoot: {fileID: 7466029226116178415}
   monsterRoot: {fileID: 2689603075869292387}
   slimePrefab: {fileID: 114000001, guid: c02055f5bc219994d8e2b6a59a676ae6, type: 3}

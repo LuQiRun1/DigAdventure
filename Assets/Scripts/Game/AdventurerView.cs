@@ -1,11 +1,38 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
+using ItemQuality = GameDataConfig.ItemQuality;
 
 [RequireComponent(typeof(Animator))]
 public class AdventurerView : MonoBehaviour
 {
     [SerializeField, Min(0.1f)] private float moveSpeed = 4f;
     [SerializeField, Min(0.05f)] private float holdDelay = 0.2f;
+    [SerializeField] private ItemQuality equippedShovelQuality;
+    [SerializeField, Tooltip("填写信息编辑器里的铲子编号。留空时使用对应品质的默认铲子。")]
+    private string equippedShovelId;
+    private ChestCatalog catalog;
+    private ChestCatalog.Shovel shovel;
+    private ShovelProgress shovelProgress;
+    private bool scanning;
+    private bool digging;
+    private bool continueAutomaticDig;
+    private bool manualSwingCompletesLayer;
+    private int queuedManualSwings;
+    private float actionEndsAt;
+    private readonly List<RaycastResult> pointerHits = new List<RaycastResult>();
+    public bool HasShovel => shovelProgress != null && isActiveAndEnabled;
+    public bool UsesManualDig => HasShovel && shovel.Mode == ChestCatalog.DigMode.Manual;
+    public float ScanSecondsRemaining => !HasShovel ? 0f : scanning ? ActionSecondsRemaining : shovel.ScanSeconds;
+    public float DigSecondsRemaining => !HasShovel ? 0f : digging ? ActionSecondsRemaining : shovel.DigSecondsPerLayer;
+    public int DigClicksRemaining => !HasShovel || (digging && manualSwingCompletesLayer)
+        ? 0 : shovel.ClicksPerLayer - shovelProgress.GetClicks(cell);
+    private float ActionSecondsRemaining => Mathf.Max(0f, actionEndsAt - Time.time);
+    private List<ShovelProgress.Detection> latestScan;
+    public IReadOnlyList<ShovelProgress.Detection> LatestScan =>
+        latestScan ?? (IReadOnlyList<ShovelProgress.Detection>)System.Array.Empty<ShovelProgress.Detection>();
+    public ItemQuality? LastDugChest { get; private set; }
     private float pressedAt;
     private bool trackingPress;
     private bool following;
@@ -16,6 +43,7 @@ public class AdventurerView : MonoBehaviour
 
     private readonly Queue<Vector2Int> path = new Queue<Vector2Int>();
     private LevelData level;
+    private DigAdventureGameBoard board;
     private Camera inputCamera;
     private Animator animator;
     private Vector2 gridOrigin;
@@ -52,9 +80,11 @@ public class AdventurerView : MonoBehaviour
     private string animatedAction;
     private int animatedState;
 
-    public void Initialize(LevelData boardLevel, Vector2 worldGridOrigin, float worldCellSize = 1f)
+    public void Initialize(LevelData boardLevel, Vector2 worldGridOrigin, float worldCellSize = 1f,
+        DigAdventureGameBoard gameBoard = null)
     {
         level = boardLevel;
+        board = gameBoard;
         gridOrigin = worldGridOrigin;
         cellSize = worldCellSize;
         inputCamera = Camera.main;
@@ -75,21 +105,30 @@ public class AdventurerView : MonoBehaviour
         }
 
         transform.position = CellCenter(cell);
+        catalog = Resources.Load<ChestCatalog>("ChestCatalog");
+        shovel = catalog ? catalog.GetShovel(equippedShovelId) ?? catalog.GetShovel(equippedShovelQuality)
+            : new ChestCatalog.Shovel();
+        shovelProgress = new ShovelProgress(level);
         LeaveScent(cell);
         PlayAnimation("Idle");
     }
 
     private void Update()
     {
+        if (scanning && Time.time >= actionEndsAt)
+        {
+            StopScan();
+            latestScan = shovelProgress.Scan(cell, shovel);
+        }
+        if (digging) UpdateDigging();
+
         UpdatePointerMovement();
         LeaveScent(WorldToCell(transform.position));
 
-        if (animatedAction == "Dig")
-        {
-            AnimatorStateInfo state = animator.GetCurrentAnimatorStateInfo(0);
-            if (state.fullPathHash != animatedState || state.normalizedTime < 1f)
-                return;
-        }
+        if (Input.GetKeyDown(KeyCode.Q))
+            TryStartScan();
+
+        if (digging || (scanning && (!digOnArrival || moveTarget != cell || trackingPress))) return;
 
         MoveAlongPath();
         if (movingToStep || path.Count > 0)
@@ -107,13 +146,162 @@ public class AdventurerView : MonoBehaviour
         }
         moveTarget = null;
         digOnArrival = false;
-        PlayAnimation(shouldDig ? "Dig" : "Idle");
+        if (shouldDig && TryStartDig())
+            return;
+        PlayAnimation("Idle");
+    }
+
+    public bool TryEquipShovel(ItemQuality quality)
+    {
+        if (!catalog || (uint)quality > (uint)ItemQuality.Red)
+            return false;
+        return TryEquipShovel(catalog.GetShovel(quality));
+    }
+
+    public bool TryEquipShovel(string id) => catalog && TryEquipShovel(catalog.GetShovel(id));
+
+    private bool TryEquipShovel(ChestCatalog.Shovel item)
+    {
+        if (item == null || !HasShovel) return false;
+        if (ReferenceEquals(shovel, item)) return true;
+
+        CancelShovelAction();
+        equippedShovelQuality = item.Quality;
+        equippedShovelId = item.Id;
+        shovel = item;
+        latestScan = null;
+        return true;
+    }
+
+    public bool TryStartScan()
+    {
+        if (!CanUseShovel() || scanning)
+            return false;
+
+        CancelShovelAction();
+        scanning = true;
+        actionEndsAt = Time.time + shovel.ScanSeconds;
+        if (board) board.ShowScanArea(cell, shovel.ScanRadius);
+        return true;
+    }
+
+    private bool CanUseShovel() => HasShovel && !movingToStep && path.Count == 0;
+
+    public void CancelShovelAction()
+    {
+        if (shovelProgress == null) return;
+
+        StopScan();
+        digging = false;
+        continueAutomaticDig = false;
+        manualSwingCompletesLayer = false;
+        queuedManualSwings = 0;
+        actionEndsAt = 0f;
+        digOnArrival = false;
+        shovelProgress.ClearClicks();
+        if (animatedAction == "Dig") PlayAnimation("Idle");
+    }
+
+    private void OnDisable() => StopScan();
+
+    private void StopScan()
+    {
+        if (!scanning) return;
+
+        scanning = false;
+        if (board) board.ClearScanArea();
+    }
+
+    public bool TryDigCurrentCell()
+    {
+        if (!CanUseShovel()) return false;
+        if (!digging) return TryStartDig(continuous: true);
+
+        if (UsesManualDig)
+        {
+            if (queuedManualSwings == int.MaxValue) return false;
+            queuedManualSwings++;
+        }
+        else
+        {
+            CancelShovelAction();
+        }
+        return true;
+    }
+
+    private bool TryStartDig(bool continuous = false)
+    {
+        if (!shovelProgress.CanDig(cell))
+            return false;
+
+        if (scanning) CancelShovelAction();
+        digging = true;
+        if (UsesManualDig)
+        {
+            StartManualSwing();
+        }
+        else
+        {
+            continueAutomaticDig = continuous;
+            actionEndsAt = Time.time + shovel.DigSecondsPerLayer;
+            PlayAnimation("Dig");
+        }
+        return true;
+    }
+
+    private void StartManualSwing()
+    {
+        manualSwingCompletesLayer = shovelProgress.RegisterClick(cell, shovel.ClicksPerLayer);
+        PlayAnimation("Dig");
+    }
+
+    private void UpdateDigging()
+    {
+        AnimatorStateInfo state = animator.GetCurrentAnimatorStateInfo(0);
+        bool hasDigAnimation = animator.HasState(0, animatedState);
+        bool swingFinished = state.fullPathHash == animatedState && state.normalizedTime >= 1f;
+        if (UsesManualDig)
+        {
+            if (hasDigAnimation && !swingFinished) return;
+
+            if (manualSwingCompletesLayer)
+                LastDugChest = shovelProgress.DigLayer(cell);
+
+            if (queuedManualSwings > 0 && shovelProgress.CanDig(cell))
+            {
+                queuedManualSwings--;
+                StartManualSwing();
+                return;
+            }
+            queuedManualSwings = 0;
+            manualSwingCompletesLayer = false;
+        }
+        else
+        {
+            if (Time.time >= actionEndsAt)
+            {
+                LastDugChest = shovelProgress.DigLayer(cell);
+                if (!continueAutomaticDig || !shovelProgress.CanDig(cell))
+                {
+                    digging = false;
+                    return;
+                }
+                actionEndsAt = Time.time + shovel.DigSecondsPerLayer;
+            }
+
+            if (hasDigAnimation && swingFinished && !state.loop)
+                PlayAnimation("Dig");
+            return;
+        }
+
+        digging = false;
     }
 
     private void UpdatePointerMovement()
     {
         if (Input.GetMouseButtonDown(0))
         {
+            if (IsPointerOverButton(Input.mousePosition)) return;
             trackingPress = true;
             following = false;
             pressedAt = Time.unscaledTime;
@@ -137,6 +325,16 @@ public class AdventurerView : MonoBehaviour
             trackingPress = false;
             following = false;
         }
+    }
+
+    private bool IsPointerOverButton(Vector2 position)
+    {
+        var eventSystem = EventSystem.current;
+        if (!eventSystem) return false;
+
+        pointerHits.Clear();
+        eventSystem.RaycastAll(new PointerEventData(eventSystem) { position = position }, pointerHits);
+        return pointerHits.Count > 0 && pointerHits[0].gameObject.GetComponentInParent<Button>() != null;
     }
 
     private void HandlePointerCell(Vector3 screenPosition, bool click)
@@ -186,6 +384,8 @@ public class AdventurerView : MonoBehaviour
         // 改变目的地时先走完当前格，避免角色在两格之间突然转向并斜穿障碍。
         Vector2Int start = movingToStep ? stepCell : cell;
         List<Vector2Int> newPath = FindPathToClosestReachable(start, requestedCell);
+        if (newPath.Count > 0)
+            CancelShovelAction();
         path.Clear();
         for (int i = 0; i < newPath.Count; i++)
             path.Enqueue(newPath[i]);

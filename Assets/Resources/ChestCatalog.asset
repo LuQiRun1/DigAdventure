@@ -20,39 +20,74 @@ MonoBehaviour:
     capacity: {x: 1, y: 1}
     weights: 0100000000000000000000000000000000000000
     minDepth: 1
-    maxDepth: 0
+    maxDepth: 3
+    depthWeights:
+    - depth: 1
+      weight: 1
+    - depth: 2
+      weight: 1
+    - depth: 3
+      weight: 1
   - shape: 1
     singleCellCost: 1
     quality: 1
     description: 
     capacity: {x: 1, y: 1}
     weights: 0000000001000000000000000000000000000000
-    minDepth: 1
-    maxDepth: 0
+    minDepth: 2
+    maxDepth: 4
+    depthWeights:
+    - depth: 2
+      weight: 1
+    - depth: 3
+      weight: 1
+    - depth: 4
+      weight: 1
   - shape: 1
     singleCellCost: 1
     quality: 2
     description: 
     capacity: {x: 1, y: 1}
     weights: 0000000000000000010000000000000000000000
-    minDepth: 1
-    maxDepth: 0
+    minDepth: 3
+    maxDepth: 5
+    depthWeights:
+    - depth: 3
+      weight: 1
+    - depth: 4
+      weight: 1
+    - depth: 5
+      weight: 1
   - shape: 1
     singleCellCost: 1
     quality: 3
     description: 
     capacity: {x: 1, y: 1}
     weights: 0000000000000000000000000100000000000000
-    minDepth: 1
-    maxDepth: 0
+    minDepth: 4
+    maxDepth: 6
+    depthWeights:
+    - depth: 4
+      weight: 1
+    - depth: 5
+      weight: 1
+    - depth: 6
+      weight: 1
   - shape: 1
     singleCellCost: 1
     quality: 4
     description: 
     capacity: {x: 1, y: 1}
     weights: 0000000000000000000000000000000001000000
-    minDepth: 1
-    maxDepth: 0
+    minDepth: 5
+    maxDepth: 7
+    depthWeights:
+    - depth: 5
+      weight: 1
+    - depth: 6
+      weight: 1
+    - depth: 7
+      weight: 1
   key:
     shape: 1
     singleCellCost: 1
@@ -63,8 +98,134 @@ MonoBehaviour:
     singleCellCost: 0.02
     quality: 0
     description: 
-  shovel:
-    shape: 1
+  shovels:
+  - shape: 1
     singleCellCost: 1
     quality: 0
-    description: 
+    description: 轻便的入门铲，适合搜查浅层地面。
+    id: timber-spade
+    displayName: 原木铲
+    scanRadius: 2
+    scanDepth: 1
+    scanPrecision: 0
+    scanSeconds: 1.6
+    digMode: 0
+    digSecondsPerLayer: 1.2
+    clicksPerLayer: 3
+  - shape: 1
+    singleCellCost: 1
+    quality: 1
+    description: 适合巡查浅层，探测范围比同品质的深掘铲更广。
+    id: rootfinder-spade
+    displayName: 草根探铲
+    scanRadius: 3
+    scanDepth: 2
+    scanPrecision: 0
+    scanSeconds: 1.3
+    digMode: 0
+    digSecondsPerLayer: 1
+    clicksPerLayer: 2
+  - shape: 1
+    singleCellCost: 1
+    quality: 2
+    description: 能快速定位周围宝箱的准确网格。
+    id: compass-spade
+    displayName: 巡野罗盘铲
+    scanRadius: 4
+    scanDepth: 3
+    scanPrecision: 1
+    scanSeconds: 1
+    digMode: 1
+    digSecondsPerLayer: 1.2
+    clicksPerLayer: 2
+  - shape: 1
+    singleCellCost: 1
+    quality: 3
+    description: 可分辨宝箱品质，兼顾探深与挖掘速度。
+    id: amethyst-spade
+    displayName: 紫晶辨宝铲
+    scanRadius: 5
+    scanDepth: 4
+    scanPrecision: 2
+    scanSeconds: 0.75
+    digMode: 1
+    digSecondsPerLayer: 0.9
+    clicksPerLayer: 1
+  - shape: 1
+    singleCellCost: 1
+    quality: 4
+    description: 适合大范围巡查，能识别宝箱品质。
+    id: spark-spade
+    displayName: 星火广域铲
+    scanRadius: 6
+    scanDepth: 5
+    scanPrecision: 2
+    scanSeconds: 0.5
+    digMode: 1
+    digSecondsPerLayer: 0.65
+    clicksPerLayer: 1
+  - shape: 1
+    singleCellCost: 1
+    quality: 0
+    description: 缩小探测范围，换取更深的探测和更少的手动点击。
+    id: flint-spade
+    displayName: 石口短铲
+    scanRadius: 1
+    scanDepth: 2
+    scanPrecision: 0
+    scanSeconds: 1.45
+    digMode: 0
+    digSecondsPerLayer: 1.2
+    clicksPerLayer: 2
+  - shape: 1
+    singleCellCost: 1
+    quality: 1
+    description: 面向近距离深层探测，适合逐格开挖。
+    id: bronze-spade
+    displayName: 青铜深掘铲
+    scanRadius: 2
+    scanDepth: 3
+    scanPrecision: 0
+    scanSeconds: 1.5
+    digMode: 0
+    digSecondsPerLayer: 1
+    clicksPerLayer: 2
+  - shape: 1
+    singleCellCost: 1
+    quality: 2
+    description: 牺牲部分探测范围，换取更深的探测与更快的自动挖掘。
+    id: blued-steel-spade
+    displayName: 蓝钢凿地铲
+    scanRadius: 3
+    scanDepth: 4
+    scanPrecision: 1
+    scanSeconds: 1.15
+    digMode: 1
+    digSecondsPerLayer: 0.98
+    clicksPerLayer: 2
+  - shape: 1
+    singleCellCost: 1
+    quality: 3
+    description: 探测更广、出结果更快，适合筛查浅层宝箱。
+    id: nightpulse-spade
+    displayName: 夜纹脉冲铲
+    scanRadius: 6
+    scanDepth: 3
+    scanPrecision: 2
+    scanSeconds: 0.65
+    digMode: 1
+    digSecondsPerLayer: 1.05
+    clicksPerLayer: 1
+  - shape: 1
+    singleCellCost: 1
+    quality: 4
+    description: 专注近距离深层探测，自动挖掘更快。
+    id: obsidian-spade
+    displayName: 赤曜穿层铲
+    scanRadius: 4
+    scanDepth: 7
+    scanPrecision: 2
+    scanSeconds: 0.6
+    digMode: 1
+    digSecondsPerLayer: 0.58
+    clicksPerLayer: 1
