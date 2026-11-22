@@ -151,6 +151,12 @@ MonoBehaviour:
   slimePrefab: {fileID: 114000001, guid: c02055f5bc219994d8e2b6a59a676ae6, type: 3}
   wolfPrefab: {fileID: 114000001, guid: 773a2568e9ea2564a9dbe9c7685489dd, type: 3}
   adventurerPrefab: {fileID: 114000001, guid: f15b60b679b58d244b7783b8359b0fe9, type: 3}
+  chestPrefabs:
+  - {fileID: 4043508280175264365, guid: 8349b83c391a52b49a536971d5f39836, type: 3}
+  - {fileID: 8057172425166785235, guid: 9352c2b2bc4a10d4e99e7183d862c2d7, type: 3}
+  - {fileID: 2266596218287065910, guid: 5d3aa3fda05090e46a6f72d03d7518ab, type: 3}
+  - {fileID: 5825765928528080764, guid: 1e997a34ee2b6f648901e0917a24c47d, type: 3}
+  - {fileID: 1244203205906979485, guid: d5873030348e6af4e86e97cb9a77c70d, type: 3}
   elementSprites:
   - {fileID: 0}
   - {fileID: 1806757289, guid: 5d78a228ce8d5c045b63bd5c0ab4c2d9, type: 3}

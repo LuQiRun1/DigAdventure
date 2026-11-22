@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: ChestCatalog
   m_EditorClassIdentifier: 
   tiers:
-  - shape: 1
+  - previewSprite: {fileID: -1365223063, guid: 935b06a3b2c71074e9e4240f4e9e0561, type: 3}
+    shape: 7399
     singleCellCost: 1
     quality: 0
     description: 
@@ -28,7 +29,8 @@ MonoBehaviour:
       weight: 1
     - depth: 3
       weight: 1
-  - shape: 1
+  - previewSprite: {fileID: 561117085, guid: 50a59faea0cd8db409eb43833f8941d9, type: 3}
+    shape: 7399
     singleCellCost: 1
     quality: 1
     description: 
@@ -43,7 +45,8 @@ MonoBehaviour:
       weight: 1
     - depth: 4
       weight: 1
-  - shape: 1
+  - previewSprite: {fileID: -1302989043, guid: 0a80675e505806b4a8abc44a289ad961, type: 3}
+    shape: 7399
     singleCellCost: 1
     quality: 2
     description: 
@@ -58,7 +61,8 @@ MonoBehaviour:
       weight: 1
     - depth: 5
       weight: 1
-  - shape: 1
+  - previewSprite: {fileID: 983759421, guid: 0f281ad557fc83c45a3ce35d3cf7e2b4, type: 3}
+    shape: 507375
     singleCellCost: 1
     quality: 3
     description: 
@@ -73,7 +77,8 @@ MonoBehaviour:
       weight: 1
     - depth: 6
       weight: 1
-  - shape: 1
+  - previewSprite: {fileID: -1932894639, guid: e9629cc9bea2edb49a5340a6bf1cc449, type: 3}
+    shape: 33554431
     singleCellCost: 1
     quality: 4
     description: 
@@ -89,22 +94,25 @@ MonoBehaviour:
     - depth: 7
       weight: 1
   key:
+    previewSprite: {fileID: 0}
     shape: 1
     singleCellCost: 1
     quality: 2
     description: 
   coin:
+    previewSprite: {fileID: 21300000, guid: 5694833b8ceb62e4a9780ddc296ed1ff, type: 3}
     shape: 1
     singleCellCost: 0.02
     quality: 0
     description: 
-  shovels:
-  - shape: 1
+  shovel:
+    previewSprite: {fileID: 0}
+    shape: 1
     singleCellCost: 1
     quality: 0
-    description: 轻便的入门铲，适合搜查浅层地面。
-    id: timber-spade
-    displayName: 原木铲
+    description: 
+    id: 
+    displayName: 
     scanRadius: 2
     scanDepth: 1
     scanPrecision: 0
@@ -112,12 +120,28 @@ MonoBehaviour:
     digMode: 0
     digSecondsPerLayer: 1.2
     clicksPerLayer: 3
-  - shape: 1
+  shovels:
+  - previewSprite: {fileID: -998560718, guid: be30ef45605dd674495e902236781e79, type: 3}
+    shape: 99
+    singleCellCost: 1
+    quality: 0
+    description: "\u8F7B\u4FBF\u7684\u5165\u95E8\u94F2\uFF0C\u9002\u5408\u641C\u67E5\u6D45\u5C42\u5730\u9762\u3002"
+    id: timber-spade
+    displayName: "\u539F\u6728\u94F2"
+    scanRadius: 2
+    scanDepth: 1
+    scanPrecision: 0
+    scanSeconds: 1.6
+    digMode: 0
+    digSecondsPerLayer: 1.2
+    clicksPerLayer: 3
+  - previewSprite: {fileID: -1510010823, guid: be30ef45605dd674495e902236781e79, type: 3}
+    shape: 99
     singleCellCost: 1
     quality: 1
-    description: 适合巡查浅层，探测范围比同品质的深掘铲更广。
+    description: "\u9002\u5408\u5DE1\u67E5\u6D45\u5C42\uFF0C\u63A2\u6D4B\u8303\u56F4\u6BD4\u540C\u54C1\u8D28\u7684\u6DF1\u6398\u94F2\u66F4\u5E7F\u3002"
     id: rootfinder-spade
-    displayName: 草根探铲
+    displayName: "\u8349\u6839\u63A2\u94F2"
     scanRadius: 3
     scanDepth: 2
     scanPrecision: 0
@@ -125,12 +149,13 @@ MonoBehaviour:
     digMode: 0
     digSecondsPerLayer: 1
     clicksPerLayer: 2
-  - shape: 1
+  - previewSprite: {fileID: -1914982111, guid: be30ef45605dd674495e902236781e79, type: 3}
+    shape: 99
     singleCellCost: 1
     quality: 2
-    description: 能快速定位周围宝箱的准确网格。
+    description: "\u80FD\u5FEB\u901F\u5B9A\u4F4D\u5468\u56F4\u5B9D\u7BB1\u7684\u51C6\u786E\u7F51\u683C\u3002"
     id: compass-spade
-    displayName: 巡野罗盘铲
+    displayName: "\u5DE1\u91CE\u7F57\u76D8\u94F2"
     scanRadius: 4
     scanDepth: 3
     scanPrecision: 1
@@ -138,12 +163,13 @@ MonoBehaviour:
     digMode: 1
     digSecondsPerLayer: 1.2
     clicksPerLayer: 2
-  - shape: 1
+  - previewSprite: {fileID: 6696919, guid: be30ef45605dd674495e902236781e79, type: 3}
+    shape: 99
     singleCellCost: 1
     quality: 3
-    description: 可分辨宝箱品质，兼顾探深与挖掘速度。
+    description: "\u53EF\u5206\u8FA8\u5B9D\u7BB1\u54C1\u8D28\uFF0C\u517C\u987E\u63A2\u6DF1\u4E0E\u6316\u6398\u901F\u5EA6\u3002"
     id: amethyst-spade
-    displayName: 紫晶辨宝铲
+    displayName: "\u7D2B\u6676\u8FA8\u5B9D\u94F2"
     scanRadius: 5
     scanDepth: 4
     scanPrecision: 2
@@ -151,12 +177,13 @@ MonoBehaviour:
     digMode: 1
     digSecondsPerLayer: 0.9
     clicksPerLayer: 1
-  - shape: 1
+  - previewSprite: {fileID: 1192779910, guid: be30ef45605dd674495e902236781e79, type: 3}
+    shape: 99
     singleCellCost: 1
     quality: 4
-    description: 适合大范围巡查，能识别宝箱品质。
+    description: "\u9002\u5408\u5927\u8303\u56F4\u5DE1\u67E5\uFF0C\u80FD\u8BC6\u522B\u5B9D\u7BB1\u54C1\u8D28\u3002"
     id: spark-spade
-    displayName: 星火广域铲
+    displayName: "\u661F\u706B\u5E7F\u57DF\u94F2"
     scanRadius: 6
     scanDepth: 5
     scanPrecision: 2
@@ -164,12 +191,13 @@ MonoBehaviour:
     digMode: 1
     digSecondsPerLayer: 0.65
     clicksPerLayer: 1
-  - shape: 1
+  - previewSprite: {fileID: -1497978457, guid: be30ef45605dd674495e902236781e79, type: 3}
+    shape: 99
     singleCellCost: 1
     quality: 0
-    description: 缩小探测范围，换取更深的探测和更少的手动点击。
+    description: "\u7F29\u5C0F\u63A2\u6D4B\u8303\u56F4\uFF0C\u6362\u53D6\u66F4\u6DF1\u7684\u63A2\u6D4B\u548C\u66F4\u5C11\u7684\u624B\u52A8\u70B9\u51FB\u3002"
     id: flint-spade
-    displayName: 石口短铲
+    displayName: "\u77F3\u53E3\u77ED\u94F2"
     scanRadius: 1
     scanDepth: 2
     scanPrecision: 0
@@ -177,12 +205,13 @@ MonoBehaviour:
     digMode: 0
     digSecondsPerLayer: 1.2
     clicksPerLayer: 2
-  - shape: 1
+  - previewSprite: {fileID: -1386917311, guid: be30ef45605dd674495e902236781e79, type: 3}
+    shape: 99
     singleCellCost: 1
     quality: 1
-    description: 面向近距离深层探测，适合逐格开挖。
+    description: "\u9762\u5411\u8FD1\u8DDD\u79BB\u6DF1\u5C42\u63A2\u6D4B\uFF0C\u9002\u5408\u9010\u683C\u5F00\u6316\u3002"
     id: bronze-spade
-    displayName: 青铜深掘铲
+    displayName: "\u9752\u94DC\u6DF1\u6398\u94F2"
     scanRadius: 2
     scanDepth: 3
     scanPrecision: 0
@@ -190,12 +219,13 @@ MonoBehaviour:
     digMode: 0
     digSecondsPerLayer: 1
     clicksPerLayer: 2
-  - shape: 1
+  - previewSprite: {fileID: 408947353, guid: be30ef45605dd674495e902236781e79, type: 3}
+    shape: 99
     singleCellCost: 1
     quality: 2
-    description: 牺牲部分探测范围，换取更深的探测与更快的自动挖掘。
+    description: "\u727A\u7272\u90E8\u5206\u63A2\u6D4B\u8303\u56F4\uFF0C\u6362\u53D6\u66F4\u6DF1\u7684\u63A2\u6D4B\u4E0E\u66F4\u5FEB\u7684\u81EA\u52A8\u6316\u6398\u3002"
     id: blued-steel-spade
-    displayName: 蓝钢凿地铲
+    displayName: "\u84DD\u94A2\u51FF\u5730\u94F2"
     scanRadius: 3
     scanDepth: 4
     scanPrecision: 1
@@ -203,12 +233,13 @@ MonoBehaviour:
     digMode: 1
     digSecondsPerLayer: 0.98
     clicksPerLayer: 2
-  - shape: 1
+  - previewSprite: {fileID: 386682397, guid: be30ef45605dd674495e902236781e79, type: 3}
+    shape: 99
     singleCellCost: 1
     quality: 3
-    description: 探测更广、出结果更快，适合筛查浅层宝箱。
+    description: "\u63A2\u6D4B\u66F4\u5E7F\u3001\u51FA\u7ED3\u679C\u66F4\u5FEB\uFF0C\u9002\u5408\u7B5B\u67E5\u6D45\u5C42\u5B9D\u7BB1\u3002"
     id: nightpulse-spade
-    displayName: 夜纹脉冲铲
+    displayName: "\u591C\u7EB9\u8109\u51B2\u94F2"
     scanRadius: 6
     scanDepth: 3
     scanPrecision: 2
@@ -216,12 +247,13 @@ MonoBehaviour:
     digMode: 1
     digSecondsPerLayer: 1.05
     clicksPerLayer: 1
-  - shape: 1
+  - previewSprite: {fileID: -11965144, guid: be30ef45605dd674495e902236781e79, type: 3}
+    shape: 99
     singleCellCost: 1
     quality: 4
-    description: 专注近距离深层探测，自动挖掘更快。
+    description: "\u4E13\u6CE8\u8FD1\u8DDD\u79BB\u6DF1\u5C42\u63A2\u6D4B\uFF0C\u81EA\u52A8\u6316\u6398\u66F4\u5FEB\u3002"
     id: obsidian-spade
-    displayName: 赤曜穿层铲
+    displayName: "\u8D64\u66DC\u7A7F\u5C42\u94F2"
     scanRadius: 4
     scanDepth: 7
     scanPrecision: 2

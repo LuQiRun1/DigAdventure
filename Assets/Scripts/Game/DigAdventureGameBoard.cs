@@ -6,8 +6,8 @@ public class DigAdventureGameBoard : MonoBehaviour
     private const int MinSpawnDistance = 5;
     private const int GeologySortingOrder = 10;
     private const int ScenerySortingStart = 20;
-    // 战斗界面为 1000，预留三层给探测遮罩、怪物和冒险者。
-    private const int HighestScenerySortingOrder = 996;
+    // 战斗界面为 1000，上方四层依次留给探测遮罩、怪物、冒险者和出土宝箱。
+    private const int HighestScenerySortingOrder = 995;
     private static readonly Vector2Int[] NeighborOffsets =
         { Vector2Int.left, Vector2Int.right, Vector2Int.up, Vector2Int.down };
 
@@ -26,6 +26,7 @@ public class DigAdventureGameBoard : MonoBehaviour
     [SerializeField] private SlimeView slimePrefab;
     [SerializeField] private WolfView wolfPrefab;
     [SerializeField] private AdventurerView adventurerPrefab;
+    [SerializeField, Tooltip("按白、绿、蓝、紫、红品质排列")] private GameObject[] chestPrefabs;
     public AdventurerView Adventurer { get; private set; }
     private readonly Dictionary<Vector2Int, (SpriteRenderer tile, GameObject mask)> geologyTiles =
         new Dictionary<Vector2Int, (SpriteRenderer, GameObject)>();
@@ -286,6 +287,40 @@ public class DigAdventureGameBoard : MonoBehaviour
             }
         }
 
+    }
+
+    public void RevealChest(Vector2Int cell, GameDataConfig.ItemQuality quality)
+    {
+        int index = (int)quality;
+        if (chestPrefabs == null || index < 0 || index >= chestPrefabs.Length || !chestPrefabs[index])
+        {
+            Debug.LogWarning($"缺少 {quality} 宝箱预制体。", this);
+            return;
+        }
+        var chest = Instantiate(chestPrefabs[index], sceneryRoot, false);
+        // 出土时保留预制体的闭合图像，开箱动画留给开箱交互。
+        if (chest.TryGetComponent(out Animator animator)) animator.enabled = false;
+        var renderer = chest.GetComponent<SpriteRenderer>();
+        renderer.sortingOrder = ScanMaskSortingOrder + 3;
+        var bounds = renderer.sprite.bounds;
+        float scale = 0.85f / Mathf.Max(bounds.size.x, bounds.size.y);
+        var center = new Vector3(cell.x - gridCenter.x, gridCenter.y - cell.y);
+        StartCoroutine(PopChest(chest.transform, center - bounds.center * scale, scale));
+    }
+
+    private static System.Collections.IEnumerator PopChest(Transform chest, Vector3 landing, float scale)
+    {
+        const float duration = 0.32f;
+        for (float elapsed = 0; elapsed < duration; elapsed += Time.deltaTime)
+        {
+            float t = elapsed / duration;
+            float arc = Mathf.Sin(t * Mathf.PI);
+            chest.localPosition = landing + Vector3.up * (0.38f * arc - 0.12f * (1f - t));
+            chest.localScale = Vector3.one * (scale * (Mathf.Lerp(0.35f, 1f, Mathf.SmoothStep(0f, 1f, t * 2f)) + 0.08f * arc));
+            yield return null;
+        }
+        chest.localPosition = landing;
+        chest.localScale = Vector3.one * scale;
     }
 
     private Vector3 SpawnPosition(Vector2Int cell, Vector2 center)

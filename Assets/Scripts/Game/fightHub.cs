@@ -8,6 +8,7 @@ public class fightHub : MonoBehaviour
 {
     private (Button button, UnityAction callback)[] bindings;
     private DigAdventureGameBoard board;
+    private BackpackPanel backpack;
     private Text detectTimeText;
     private Text digTimeText;
     private AdventurerView Adventurer => board ? board.Adventurer : null;
@@ -18,6 +19,7 @@ public class fightHub : MonoBehaviour
         bindings = new (Button, UnityAction)[]
         {
             (FindButton("down/backpackBtn"), OnBackpackClick),
+            (FindButton("down/mapBtn"), OnMapClick),
             (FindButton("Info/pauseBtn"), OnPauseClick),
             (FindButton("prop/detectBtn"), OnDetectClick),
             (FindButton("prop/digBtn"), OnDigClick)
@@ -25,6 +27,8 @@ public class fightHub : MonoBehaviour
         detectTimeText = FindTimeText("prop/detectBtn/timeText");
         digTimeText = FindTimeText("prop/digBtn/timeText");
         board = FindObjectOfType<DigAdventureGameBoard>();
+        backpack = GetComponentInParent<Canvas>().rootCanvas.GetComponentInChildren<BackpackPanel>(true);
+        if (backpack) backpack.Close();
     }
 
     private Text FindTimeText(string path)
@@ -68,8 +72,12 @@ public class fightHub : MonoBehaviour
     {
         var adventurer = Adventurer;
         if (adventurer) adventurer.CancelShovelAction();
+        if (backpack) backpack.Open(adventurer ? adventurer.EquippedShovel : null);
     }
-
+    public void OnMapClick()
+    {
+        
+    }
     public void OnPauseClick()
     {
         var adventurer = Adventurer;

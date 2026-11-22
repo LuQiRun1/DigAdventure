@@ -23,6 +23,7 @@ public class AdventurerView : MonoBehaviour
     private float actionEndsAt;
     private readonly List<RaycastResult> pointerHits = new List<RaycastResult>();
     public bool HasShovel => shovelProgress != null && isActiveAndEnabled;
+    public ChestCatalog.Shovel EquippedShovel => shovel;
     public bool UsesManualDig => HasShovel && shovel.Mode == ChestCatalog.DigMode.Manual;
     public float ScanSecondsRemaining => !HasShovel ? 0f : scanning ? ActionSecondsRemaining : shovel.ScanSeconds;
     public float DigSecondsRemaining => !HasShovel ? 0f : digging ? ActionSecondsRemaining : shovel.DigSecondsPerLayer;
@@ -265,7 +266,7 @@ public class AdventurerView : MonoBehaviour
             if (hasDigAnimation && !swingFinished) return;
 
             if (manualSwingCompletesLayer)
-                LastDugChest = shovelProgress.DigLayer(cell);
+                CompleteDigLayer();
 
             if (queuedManualSwings > 0 && shovelProgress.CanDig(cell))
             {
@@ -280,7 +281,7 @@ public class AdventurerView : MonoBehaviour
         {
             if (Time.time >= actionEndsAt)
             {
-                LastDugChest = shovelProgress.DigLayer(cell);
+                CompleteDigLayer();
                 if (!continueAutomaticDig || !shovelProgress.CanDig(cell))
                 {
                     digging = false;
@@ -297,8 +298,16 @@ public class AdventurerView : MonoBehaviour
         digging = false;
     }
 
+    private void CompleteDigLayer()
+    {
+        LastDugChest = shovelProgress.DigLayer(cell);
+        if (LastDugChest.HasValue && board)
+            board.RevealChest(cell, LastDugChest.Value);
+    }
+
     private void UpdatePointerMovement()
     {
+        if (BackpackPanel.OpenPanel) { trackingPress = false; return; }
         if (Input.GetMouseButtonDown(0))
         {
             if (IsPointerOverButton(Input.mousePosition)) return;

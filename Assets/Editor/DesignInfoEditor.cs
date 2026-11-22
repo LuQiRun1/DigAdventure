@@ -11,7 +11,7 @@ public sealed class DesignInfoEditor : EditorWindow
     private static readonly string[] Defaults = { "场景元素", "怪物", "地质", "物品" };
     private readonly List<string> categories = new List<string>();
     private readonly Dictionary<string, List<KeyValuePair<string, string>>> entries = new Dictionary<string, List<KeyValuePair<string, string>>>();
-    [SerializeField] private List<string> expanded = new List<string> { "场景元素" };
+    [SerializeField] private List<string> expanded = new List<string>();
     [SerializeField] private string selected;
     [SerializeField] private string draft = "";
     [SerializeField] private string original = "";
@@ -255,7 +255,9 @@ public sealed class DesignInfoEditor : EditorWindow
                     using (new EditorGUI.DisabledScope(!hasUnsavedChanges))
                         if (GUILayout.Button("保存")) SaveChanges();
                 }
-                if (previews.TryGetValue(selected, out Sprite preview))
+                bool hasPreviewEntry = previews.TryGetValue(selected, out Sprite preview);
+                if (selectedShovel != null) preview = selectedShovel.PreviewSprite;
+                if (selectedShovel != null || hasPreviewEntry)
                 {
                     if (preview != null)
                     {
@@ -503,6 +505,7 @@ public sealed class DesignInfoEditor : EditorWindow
 
     private static void DrawItemSettings(SerializedProperty item, GameDataConfig.ItemQuality? fixedQuality)
     {
+        EditorGUILayout.PropertyField(item.FindPropertyRelative("previewSprite"), new GUIContent("物品图标"));
         var quality = item.FindPropertyRelative("quality");
         if (fixedQuality.HasValue)
             EditorGUILayout.LabelField("物品品质", QualityNames[(int)fixedQuality.Value]);

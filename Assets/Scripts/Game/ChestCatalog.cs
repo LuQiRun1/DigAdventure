@@ -37,6 +37,8 @@ public sealed class ChestCatalog : ScriptableObject
     [Serializable]
     public class Item
     {
+        [SerializeField] private Sprite previewSprite;
+        public Sprite PreviewSprite => previewSprite;
         [SerializeField] private int shape = 1;
         [SerializeField] private float singleCellCost = 1f;
         [SerializeField] private GameDataConfig.ItemQuality quality;

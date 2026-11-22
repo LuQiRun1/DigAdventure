@@ -17,7 +17,7 @@ public class UniversalSpriteAnimationTool : EditorWindow
         MultiplePNG
     }
 
-    private enum ActionType { Idle, Move, Run }
+    private enum ActionType { Idle, Move, Run, Open }
     private enum Direction { None, Top, Down, Left, Right }
     private enum ExistingAssetMode { Create, Merge, Replace }
     [Serializable] private class ClipGroup
@@ -134,7 +134,89 @@ public class UniversalSpriteAnimationTool : EditorWindow
         }
 
         GUI.backgroundColor = Color.white;
+        if (importMode == ImportMode.SpriteSheet)
+        {
+            using (new EditorGUI.DisabledScope(!spriteSheet))
+                if (GUILayout.Button("删除当前图集及关联资源…"))
+                    DeleteSheetAssets();
+        }
         EditorGUILayout.EndScrollView();
+    }
+
+    private void DeleteSheetAssets()
+    {
+        string sheet = AssetDatabase.GetAssetPath(spriteSheet);
+        if (!sheet.StartsWith("Assets/", StringComparison.Ordinal) ||
+            !(AssetImporter.GetAtPath(sheet) is TextureImporter))
+        {
+            EditorUtility.DisplayDialog("无法删除", "请选择 Assets 目录中的图集纹理。", "确定");
+            return;
+        }
+
+        var clips = new HashSet<string>();
+        foreach (string guid in AssetDatabase.FindAssets("t:AnimationClip", new[] { "Assets" }))
+        {
+            string path = AssetDatabase.GUIDToAssetPath(guid);
+            if (!path.EndsWith(".anim", StringComparison.OrdinalIgnoreCase)) continue;
+            var clip = AssetDatabase.LoadAssetAtPath<AnimationClip>(path);
+            var bindings = AnimationUtility.GetObjectReferenceCurveBindings(clip);
+            if (bindings.Length != 1 || bindings[0].type != typeof(SpriteRenderer) ||
+                bindings[0].propertyName != "m_Sprite" || bindings[0].path != "" ||
+                AnimationUtility.GetCurveBindings(clip).Length != 0 || clip.events.Length != 0) continue;
+            var keys = AnimationUtility.GetObjectReferenceCurve(clip, bindings[0]);
+            if (keys.Length > 0 && keys.All(k => k.value is Sprite && AssetDatabase.GetAssetPath(k.value) == sheet))
+                clips.Add(path);
+        }
+
+        var controllers = new HashSet<string>();
+        foreach (string guid in AssetDatabase.FindAssets("t:AnimatorController", new[] { "Assets" }))
+        {
+            string path = AssetDatabase.GUIDToAssetPath(guid);
+            var controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(path);
+            if (!controller || !path.EndsWith("Animator.controller", StringComparison.OrdinalIgnoreCase)) continue;
+            var motions = controller.animationClips;
+            if (motions.Length > 0 && motions.All(c => clips.Contains(AssetDatabase.GetAssetPath(c))))
+                controllers.Add(path);
+        }
+
+        var prefabs = new List<string>();
+        foreach (string guid in AssetDatabase.FindAssets("t:Prefab", new[] { "Assets" }))
+        {
+            string path = AssetDatabase.GUIDToAssetPath(guid);
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            if (!prefab || !prefab.TryGetComponent(out Animator animator) || !prefab.GetComponent<SpriteRenderer>()) continue;
+            string controller = AssetDatabase.GetAssetPath(animator.runtimeAnimatorController);
+            if (controllers.Contains(controller) && Path.GetFileNameWithoutExtension(controller) ==
+                Path.GetFileNameWithoutExtension(path) + "Animator") prefabs.Add(path);
+        }
+
+        var paths = prefabs.Concat(controllers).Concat(clips).Append(sheet).ToArray();
+        var targets = new HashSet<string>(paths);
+        var blockers = new List<string>();
+        foreach (string path in AssetDatabase.GetAllAssetPaths())
+        {
+            if (!path.StartsWith("Assets/", StringComparison.Ordinal) || targets.Contains(path) ||
+                AssetDatabase.IsValidFolder(path)) continue;
+            if (AssetDatabase.GetDependencies(path, false).Any(targets.Contains)) blockers.Add(path);
+        }
+        if (blockers.Count > 0)
+        {
+            EditorUtility.DisplayDialog("有其他资源仍在使用", "请先解除以下引用，再删除图集：\n" +
+                string.Join("\n", blockers), "确定");
+            return;
+        }
+        if (!EditorUtility.DisplayDialog("删除图集及关联资源", "以下资源将移至回收站：\n" +
+            string.Join("\n", paths), "移至回收站", "取消")) return;
+        foreach (string path in paths)
+        {
+            if (AssetDatabase.MoveAssetToTrash(path)) continue;
+            EditorUtility.DisplayDialog("删除已停止", "无法移至回收站：" + path +
+                "\n此前列出的已处理资源可从回收站恢复。", "确定");
+            return;
+        }
+        spriteSheet = null;
+        groups.Clear();
+        GUIUtility.ExitGUI();
     }
 
     // =========================
@@ -882,6 +964,11 @@ public class UniversalSpriteAnimationTool : EditorWindow
     {
         foreach (string token in Regex.Split(suffix, "[^a-zA-Z]+"))
         {
+            if (string.Equals(token, "open", StringComparison.OrdinalIgnoreCase))
+            {
+                detectedAction = ActionType.Open;
+                return true;
+            }
             if (string.Equals(token, "idle", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(token, "idea", StringComparison.OrdinalIgnoreCase))
             {

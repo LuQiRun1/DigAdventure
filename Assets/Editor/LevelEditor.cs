@@ -33,6 +33,7 @@ public sealed class LevelEditor : EditorWindow
     [SerializeField] private bool gridEditingExpanded = true;
     [SerializeField] private bool monstersExpanded;
     [SerializeField] private bool chestsExpanded;
+    private ChestCatalog chestCatalog;
     [SerializeField] private bool sceneElementsExpanded;
     [SerializeField] private bool geologyElementsExpanded;
     [SerializeField] private int selectedElement;
@@ -89,6 +90,7 @@ public sealed class LevelEditor : EditorWindow
 
     private void OnEnable()
     {
+        chestCatalog = Resources.Load<ChestCatalog>("ChestCatalog");
         ReloadSceneElements();
         ReloadLevels();
         Undo.undoRedoPerformed += OnUndoRedo;
@@ -125,6 +127,7 @@ public sealed class LevelEditor : EditorWindow
 
     private void OnProjectChange()
     {
+        chestCatalog = Resources.Load<ChestCatalog>("ChestCatalog");
         ReloadSceneElements();
         ReloadLevels();
         Repaint();
@@ -902,10 +905,14 @@ public sealed class LevelEditor : EditorWindow
             var rect = new Rect(gridOrigin + (Vector2)chest.Cell * GridCellSize, Vector2.one * GridCellSize);
             if (!rect.Overlaps(visibleContent)) continue;
 
-            float size = Mathf.Min(GridCellSize - 2f, 20f);
+            float size = GridCellSize - 2f;
             var badge = new Rect(rect.center - Vector2.one * (size * 0.5f), Vector2.one * size);
-            EditorGUI.DrawRect(badge, new Color32(117, 77, 29, 255));
-            GUI.Label(badge, new GUIContent("箱", DesignInfoEditor.QualityNames[(int)chest.Quality] + "宝箱"),
+            Sprite icon = chestCatalog ? chestCatalog.Get(chest.Quality)?.PreviewSprite : null;
+            if (icon)
+                DrawSpritePreview(badge, icon);
+            else
+                EditorGUI.DrawRect(badge, new Color32(117, 77, 29, 255));
+            GUI.Label(badge, new GUIContent(icon ? "" : "箱", DesignInfoEditor.QualityNames[(int)chest.Quality] + "宝箱"),
                 EditorStyles.centeredGreyMiniLabel);
         }
     }

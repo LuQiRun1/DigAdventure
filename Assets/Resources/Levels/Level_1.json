@@ -2289,7 +2289,7 @@
         }
     ],
     "slimeCount": 1,
-    "wolfCount": 1,
+    "wolfCount": 0,
     "chestCounts": [
         3,
         2,
@@ -2300,43 +2300,51 @@
     "chestPlacements": [
         {
             "cell": {
-                "x": 4,
-                "y": 9
+                "x": 7,
+                "y": 7
             },
             "quality": 0,
-            "depth": 1
-        },
-        {
-            "cell": {
-                "x": 8,
-                "y": 3
-            },
-            "quality": 0,
-            "depth": 1
-        },
-        {
-            "cell": {
-                "x": 3,
-                "y": 9
-            },
-            "quality": 0,
-            "depth": 1
+            "depth": 2
         },
         {
             "cell": {
                 "x": 7,
-                "y": 6
+                "y": 9
             },
-            "quality": 1,
-            "depth": 1
+            "quality": 0,
+            "depth": 3
         },
         {
             "cell": {
                 "x": 3,
-                "y": 3
+                "y": 4
+            },
+            "quality": 0,
+            "depth": 1
+        },
+        {
+            "cell": {
+                "x": 9,
+                "y": 5
             },
             "quality": 1,
-            "depth": 1
+            "depth": 3
+        },
+        {
+            "cell": {
+                "x": 1,
+                "y": 4
+            },
+            "quality": 1,
+            "depth": 2
+        },
+        {
+            "cell": {
+                "x": 7,
+                "y": 3
+            },
+            "quality": 2,
+            "depth": 5
         }
     ]
 }
