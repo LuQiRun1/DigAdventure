@@ -23,6 +23,7 @@ public sealed class DesignInfoEditor : EditorWindow
     internal static readonly string[] QualityNames = { "白色", "绿色", "蓝色", "紫色", "红色" };
     [SerializeField] private bool chestsExpanded;
     [SerializeField] private bool shovelsExpanded;
+    [SerializeField] private bool treesExpanded = true;
     private ChestCatalog chestCatalog;
     private const int DepthWeightsPerPage = 12;
     private int depthWeightPage;
@@ -69,7 +70,10 @@ public sealed class DesignInfoEditor : EditorWindow
         {
             if (element == GameDataConfig.SceneElement.None) continue;
             sprites.TryGetValue((int)element, out Sprite sprite);
-            AddEntry("场景元素", element.ToString(), ObjectNames.NicifyVariableName(element.ToString()), sprite);
+            string label = GameDataConfig.IsTree((int)element)
+                ? element.ToString().ToLowerInvariant()
+                : ObjectNames.NicifyVariableName(element.ToString());
+            AddEntry("场景元素", element.ToString(), label, sprite);
         }
         foreach (GameDataConfig.GeologyElement element in Enum.GetValues(typeof(GameDataConfig.GeologyElement)))
         {
@@ -190,8 +194,22 @@ public sealed class DesignInfoEditor : EditorWindow
                             open = !open;
                         }
                         if (!open) continue;
+                        bool treeBranchDrawn = false;
                         foreach (var entry in entries[name])
                         {
+                            if (name == "场景元素" && IsTreeEntry(entry.Key))
+                            {
+                                if (!treeBranchDrawn)
+                                {
+                                    bool wasOpen = treesExpanded;
+                                    Rect row = TreeRow(1, !wasOpen && IsSelectedTree());
+                                    treesExpanded = EditorGUI.Foldout(row, wasOpen, "树", true);
+                                    treeBranchDrawn = true;
+                                }
+                                if (treesExpanded)
+                                    DrawTreeItem(entry.Key, entry.Value, 2);
+                                continue;
+                            }
                             if (entry.Key == ChestKey || entry.Key == ShovelKey)
                             {
                                 bool isChest = entry.Key == ChestKey;
@@ -305,6 +323,18 @@ public sealed class DesignInfoEditor : EditorWindow
         text.xMin += 14f; // 为折叠箭头保留空间，与同级分支的文字对齐。
         if (GUI.Button(row, GUIContent.none, GUIStyle.none)) Select(key);
         GUI.Label(text, label, selected == key ? EditorStyles.boldLabel : EditorStyles.label);
+    }
+
+    private static bool IsTreeEntry(string key)
+    {
+        return Path.GetDirectoryName(key) == "场景元素" &&
+               Enum.TryParse(Path.GetFileName(key), out GameDataConfig.SceneElement element) &&
+               GameDataConfig.IsTree((int)element);
+    }
+
+    private bool IsSelectedTree()
+    {
+        return !string.IsNullOrEmpty(selected) && IsTreeEntry(selected);
     }
 
     private void DrawChestSettings(GameDataConfig.ItemQuality quality)

@@ -217,8 +217,26 @@ public sealed class LevelEditor : EditorWindow
     internal static void LoadElementSprites(Dictionary<int, Sprite> sprites, List<int> scenes = null, List<int> geology = null)
     {
         LoadSceneElementSprites(SceneElementsAtlas, (int)SceneElement.FloweringBush, (int)SceneElement.BrokenTreeStump, scenes, sprites);
-        LoadSceneElementSprites(TreesAtlas, (int)SceneElement.GreenBroadleafTree, (int)SceneElement.GlowingBlueTree, scenes, sprites);
+        LoadTreeSprites(scenes, sprites);
         LoadSceneElementSprites(GeologyAtlas, (int)GeologyElement.GrassTile1, (int)GeologyElement.MossyDirtTile4, geology, sprites);
+    }
+
+    private static void LoadTreeSprites(List<int> palette, Dictionary<int, Sprite> elementSprites)
+    {
+        const string spritePrefix = "tree_";
+        foreach (var asset in AssetDatabase.LoadAllAssetsAtPath(TreesAtlas))
+        {
+            if (!(asset is Sprite sprite) ||
+                !sprite.name.StartsWith(spritePrefix, StringComparison.Ordinal) ||
+                !int.TryParse(sprite.name.Substring(spritePrefix.Length), out int treeNumber) ||
+                treeNumber < 1 || treeNumber > 16)
+                continue;
+
+            int element = GameDataConfig.GetTreeElementId(treeNumber);
+            if (!elementSprites.ContainsKey(element))
+                palette?.Add(element);
+            elementSprites[element] = sprite;
+        }
     }
 
     private static void LoadSceneElementSprites(string assetPath, int firstElement, int lastElement,

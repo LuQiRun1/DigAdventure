@@ -77,18 +77,23 @@
         TreeStump = 17,
         /// <summary>断裂的树桩。</summary>
         BrokenTreeStump = 18,
-        /// <summary>绿叶阔叶树。</summary>
-        GreenBroadleafTree = 19,
-        /// <summary>金黄色的秋树。</summary>
-        AutumnTree = 20,
-        /// <summary>粉色开花树。</summary>
-        PinkBlossomTree = 21,
-        /// <summary>覆雪的针叶树。</summary>
-        SnowyPineTree = 22,
-        /// <summary>常绿针叶树。</summary>
-        PineTree = 23,
-        /// <summary>蓝色发光树。</summary>
-        GlowingBlueTree = 24
+        Tree1 = 19,
+        Tree2 = 20,
+        Tree3 = 21,
+        Tree4 = 22,
+        Tree5 = 23,
+        Tree6 = 24,
+        // 25～40 由已发布的地质元素占用；新增树继续使用未占用编号，避免旧关卡数据失效。
+        Tree7 = 41,
+        Tree8 = 42,
+        Tree9 = 43,
+        Tree10 = 44,
+        Tree11 = 45,
+        Tree12 = 46,
+        Tree13 = 47,
+        Tree14 = 48,
+        Tree15 = 49,
+        Tree16 = 50
     }
 
     /// <summary>关卡地质类型，保留现有关卡和 Sprite 数组使用的编号。</summary>
@@ -117,6 +122,19 @@
     public static bool IsGeology(int elementId)
     {
         return elementId >= (int)GeologyElement.GrassTile1 && elementId <= (int)GeologyElement.MossyDirtTile4;
+    }
+
+    public static bool IsTree(int elementId)
+    {
+        return elementId >= (int)SceneElement.Tree1 && elementId <= (int)SceneElement.Tree6 ||
+               elementId >= (int)SceneElement.Tree7 && elementId <= (int)SceneElement.Tree16;
+    }
+
+    public static int GetTreeElementId(int treeNumber)
+    {
+        return treeNumber <= 6
+            ? (int)SceneElement.Tree1 + treeNumber - 1
+            : (int)SceneElement.Tree7 + treeNumber - 7;
     }
 
     public static string GetElementName(int elementId)
