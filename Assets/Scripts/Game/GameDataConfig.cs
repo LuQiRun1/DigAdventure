@@ -116,13 +116,17 @@
         MossyDirtTile1 = 37,
         MossyDirtTile2 = 38,
         MossyDirtTile3 = 39,
-        MossyDirtTile4 = 40
+        MossyDirtTile4 = 40,
+        DoorHorizontal = 51,
+        DoorVertical = 52
     }
 
     public static bool IsGeology(int elementId)
     {
-        return elementId >= (int)GeologyElement.GrassTile1 && elementId <= (int)GeologyElement.MossyDirtTile4;
+        return elementId >= (int)GeologyElement.GrassTile1 && elementId <= (int)GeologyElement.MossyDirtTile4 || IsDoor(elementId);
     }
+
+    public static bool IsDoor(int id) => id == (int)GeologyElement.DoorHorizontal || id == (int)GeologyElement.DoorVertical;
 
     public static bool IsTree(int elementId)
     {

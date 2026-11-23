@@ -79,7 +79,9 @@ public sealed class DesignInfoEditor : EditorWindow
         {
             if (element == GameDataConfig.GeologyElement.None) continue;
             sprites.TryGetValue((int)element, out Sprite sprite);
-            AddEntry("地质", element.ToString(), ObjectNames.NicifyVariableName(element.ToString()), sprite);
+            string label = element == GameDataConfig.GeologyElement.DoorHorizontal ? "横向门" :
+                element == GameDataConfig.GeologyElement.DoorVertical ? "纵向门" : ObjectNames.NicifyVariableName(element.ToString());
+            AddEntry("地质", element.ToString(), label, sprite);
         }
         AddEntry("物品", nameof(GameDataConfig.ItemType.Key), "钥匙", null);
         AddEntry("物品", nameof(GameDataConfig.ItemType.Coin), "金币", null);

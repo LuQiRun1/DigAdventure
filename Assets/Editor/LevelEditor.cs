@@ -33,6 +33,7 @@ public sealed class LevelEditor : EditorWindow
     [SerializeField] private bool gridEditingExpanded = true;
     [SerializeField] private bool monstersExpanded;
     [SerializeField] private bool chestsExpanded;
+    [SerializeField] private bool placingExit;
     private ChestCatalog chestCatalog;
     [SerializeField] private bool sceneElementsExpanded;
     [SerializeField] private bool geologyElementsExpanded;
@@ -65,6 +66,8 @@ public sealed class LevelEditor : EditorWindow
     private float strokeScale;
     private Vector2Int[] strokeOccupancy;
     private int editingPlacementIndex = -1;
+    private const int SelectedEntrance = -2, SelectedExit = -3;
+    private bool DoorSelected => editingPlacementIndex == SelectedEntrance || editingPlacementIndex == SelectedExit;
     private int strokeButton;
     private int strokeControlId;
     private int strokeUndoGroup;
@@ -219,6 +222,7 @@ public sealed class LevelEditor : EditorWindow
         LoadSceneElementSprites(SceneElementsAtlas, (int)SceneElement.FloweringBush, (int)SceneElement.BrokenTreeStump, scenes, sprites);
         LoadTreeSprites(scenes, sprites);
         LoadSceneElementSprites(GeologyAtlas, (int)GeologyElement.GrassTile1, (int)GeologyElement.MossyDirtTile4, geology, sprites);
+        LoadSceneElementSprites("Assets/Res/Art/Sprites/door.png", (int)GeologyElement.DoorHorizontal, (int)GeologyElement.DoorVertical, geology, sprites);
     }
 
     private static void LoadTreeSprites(List<int> palette, Dictionary<int, Sprite> elementSprites)
@@ -471,6 +475,8 @@ public sealed class LevelEditor : EditorWindow
 
                 DrawElementPalette("场景元素", scenePalette, ref sceneElementsExpanded, ref paletteScroll, currentSidebarWidth);
                 DrawElementPalette("地质元素", geologyPalette, ref geologyElementsExpanded, ref geologyPaletteScroll, currentSidebarWidth);
+                if (GameDataConfig.IsDoor(selectedElement))
+                    placingExit = GUILayout.Toolbar(placingExit ? 1 : 0, new[] { "放置入口", "放置出口" }) == 1;
             }
 
             DrawSidebarSplitter(currentSidebarWidth, splitterControlId);
@@ -590,6 +596,14 @@ public sealed class LevelEditor : EditorWindow
 
         if (!expanded)
             return;
+
+        if (palette == geologyPalette && selectedLevel && DoorSelected)
+        {
+            bool isExit = editingPlacementIndex == SelectedExit;
+            float value = selectedLevel.DoorScale(isExit);
+            float next = EditorGUILayout.Slider(isExit ? "出口缩放" : "入口缩放", value, MinElementScale, MaxElementScale);
+            if (!Mathf.Approximately(next, value)) SaveDoorScale(isExit, next);
+        }
 
         if (palette == scenePalette && selectedLevel != null &&
             selectedElement != (int)SceneElement.None && !GameDataConfig.IsGeology(selectedElement))
@@ -894,6 +908,18 @@ public sealed class LevelEditor : EditorWindow
             DrawGridLayer(grid.position, visibleContent, true);
             DrawGridLayer(grid.position, visibleContent, false);
             DrawGridOccupancy(grid.position, visibleContent);
+            DrawDoor(selectedLevel.Entrance, selectedLevel.EntranceDoor, "入");
+            DrawDoor(selectedLevel.Exit, selectedLevel.ExitDoor, "出");
+            void DrawDoor(Vector2Int cell, GeologyElement door, string label)
+            {
+                bool isExit = cell == selectedLevel.Exit;
+                var rect = DoorRect(grid.position, isExit);
+                if (!rect.Overlaps(visibleContent)) return;
+                DrawElementSprite(rect, (int)door);
+                if (editingPlacementIndex == (isExit ? SelectedExit : SelectedEntrance))
+                    Handles.DrawSolidRectangleWithOutline(rect, Color.clear, Color.cyan);
+                GUI.Label(rect, label, EditorStyles.whiteBoldLabel);
+            }
             if (chestsExpanded)
                 DrawGridChests(grid.position, visibleContent);
         }
@@ -996,6 +1022,18 @@ public sealed class LevelEditor : EditorWindow
 
     private void SelectPlacedElement(Rect grid, Vector2 pointerPosition, bool cycle = false)
     {
+        bool exitHit = DoorRect(grid.position, true).Contains(pointerPosition);
+        bool entranceHit = DoorRect(grid.position, false).Contains(pointerPosition);
+        bool chooseExit = exitHit && (!cycle || !DoorSelected);
+        if (chooseExit || (entranceHit && (!cycle || editingPlacementIndex != SelectedEntrance)))
+        {
+            editingPlacementIndex = chooseExit ? SelectedExit : SelectedEntrance;
+            selectedElement = (int)(chooseExit ? selectedLevel.ExitDoor : selectedLevel.EntranceDoor);
+            placingExit = chooseExit;
+            geologyElementsExpanded = true;
+            Repaint();
+            return;
+        }
         editingPlacementIndex = FindPlacedElementIndex(grid, pointerPosition, cycle);
         if (TryGetSelectedPlacement(out var placement))
         {
@@ -1030,6 +1068,15 @@ public sealed class LevelEditor : EditorWindow
 
     private bool TryScaleSelectedElement(Rect grid, Vector2 pointerPosition, float factor, bool controlHeld)
     {
+        if (DoorSelected)
+        {
+            bool isExit = editingPlacementIndex == SelectedExit;
+            if (!controlHeld && !DoorRect(grid.position, isExit).Contains(pointerPosition)) return false;
+            float current = selectedLevel.DoorScale(isExit);
+            float next = Mathf.Clamp(current * factor, MinElementScale, MaxElementScale);
+            if (!Mathf.Approximately(next, current)) SaveDoorScale(isExit, next);
+            return true;
+        }
         if (!TryGetSelectedPlacement(out var placement) ||
             (!controlHeld && !GetPlacementRect(grid.position, placement).Contains(pointerPosition)))
             return false;
@@ -1043,6 +1090,23 @@ public sealed class LevelEditor : EditorWindow
         }
 
         return true;
+    }
+
+    private Rect DoorRect(Vector2 origin, bool isExit)
+    {
+        Vector2 cell = isExit ? selectedLevel.Exit : selectedLevel.Entrance;
+        Vector2 center = origin + (cell + Vector2.one * 0.5f) * GridCellSize;
+        Vector2 size = Vector2.one * (GridCellSize * selectedLevel.DoorScale(isExit));
+        return new Rect(center - size * 0.5f, size);
+    }
+
+    private void SaveDoorScale(bool isExit, float scale)
+    {
+        Undo.RecordObject(selectedLevel, isExit ? "缩放出口" : "缩放入口");
+        selectedLevel.SetDoorScale(isExit, scale);
+        EditorUtility.SetDirty(selectedLevel);
+        SaveLevel(selectedLevel);
+        Repaint();
     }
 
     private int FindPlacedElementIndex(Rect grid, Vector2 pointerPosition, bool cycle)
@@ -1230,6 +1294,8 @@ public sealed class LevelEditor : EditorWindow
                 changed |= strokeEditsOccupancy
                     ? strokeLevel.SetCellType(cell, strokeButton == 1 ? LevelData.CellType.Open
                         : (LevelData.CellType)(((int)strokeLevel.GetCellType(cell) + 1) % 4))
+                    : GameDataConfig.IsDoor(strokeElement)
+                        ? strokeLevel.PlaceDoor(placingExit, cell, (GeologyElement)strokeElement)
                     : GameDataConfig.IsGeology(strokeElement)
                         ? strokeLevel.SetGeologyElement(cell, (GeologyElement)strokeElement)
                         : strokeLevel.SetSceneElement(cell, (SceneElement)strokeElement, strokeScale, strokeOccupancy);

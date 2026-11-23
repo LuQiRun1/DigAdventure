@@ -100,7 +100,23 @@ public class DigAdventureGameBoard : MonoBehaviour
             renderer.sprite = sprite;
             renderer.sortingOrder = Mathf.Min(ScenerySortingStart + i, HighestScenerySortingOrder);
         }
+        DrawDoor(level.Entrance, level.EntranceDoor, "入口");
+        DrawDoor(level.Exit, level.ExitDoor, "出口");
         SpawnCharacters(gridCenter);
+    }
+
+    private void DrawDoor(Vector2Int cell, GameDataConfig.GeologyElement door, string label)
+    {
+        var obj = new GameObject(label);
+        obj.transform.SetParent(sceneryRoot, false);
+        obj.transform.localPosition = new Vector3(cell.x - gridCenter.x, gridCenter.y - cell.y);
+        var sprite = elementSprites[(int)door];
+        var renderer = obj.AddComponent<SpriteRenderer>();
+        renderer.sprite = sprite;
+        float scale = level.DoorScale(cell == level.Exit) / Mathf.Max(sprite.bounds.size.x, sprite.bounds.size.y);
+        obj.transform.localScale = Vector3.one * scale;
+        obj.transform.localPosition -= sprite.bounds.center * scale;
+        renderer.sortingOrder = ScanMaskSortingOrder;
     }
 
     private (SpriteRenderer tile, GameObject mask) GetOrCreateGeologyTile(Vector2Int cell)
@@ -206,44 +222,15 @@ public class DigAdventureGameBoard : MonoBehaviour
     private void SpawnCharacters(Vector2 center)
     {
         int count = level.Width * level.Height;
-        int start = Random.Range(0, count);
-        Vector2Int? adventurerCell = null;
+        Vector2Int adventurerCell = level.Entrance;
         long requested = (long)level.SlimeCount + level.WolfCount;
         int needed = (int)System.Math.Min(count - 1, requested);
         var spawnCells = new List<Vector2Int>();
-        var candidates = new List<Vector2Int>();
-        var frontier = new Queue<(Vector2Int cell, int distance)>();
-        var visited = new HashSet<Vector2Int>();
-
-        for (int offset = 0; offset < count; offset++)
-        {
-            int index = (start + offset) % count;
-            var cell = new Vector2Int(index % level.Width, index / level.Width);
-            if (!level.IsCellWalkable(cell)) continue;
-
-            if (!adventurerCell.HasValue)
-                adventurerCell = cell;
-
-            if (needed == 0) break;
-            FindMonsterSpawns(cell, needed, frontier, visited, candidates);
-            if (candidates.Count > spawnCells.Count)
-            {
-                adventurerCell = cell;
-                var previous = spawnCells;
-                spawnCells = candidates;
-                candidates = previous;
-                if (spawnCells.Count == needed) break;
-            }
-        }
-
-        if (!adventurerCell.HasValue)
-        {
-            Debug.LogWarning("当前关卡没有可供 Adventurer 出生的通行格。", this);
-            return;
-        }
+        if (needed > 0)
+            FindMonsterSpawns(adventurerCell, needed, new Queue<(Vector2Int, int)>(), new HashSet<Vector2Int>(), spawnCells);
 
         var origin = monsterRoot.TransformPoint(new Vector3(-center.x, center.y));
-        var adventurer = Instantiate(adventurerPrefab, SpawnPosition(adventurerCell.Value, center),
+        var adventurer = Instantiate(adventurerPrefab, SpawnPosition(adventurerCell, center),
             monsterRoot.rotation, monsterRoot);
         adventurer.Initialize(level, origin, monsterRoot.lossyScale.x, this);
         Adventurer = adventurer;
@@ -273,7 +260,7 @@ public class DigAdventureGameBoard : MonoBehaviour
         while (frontier.Count > 0)
         {
             var (cell, distance) = frontier.Dequeue();
-            if (distance >= MinSpawnDistance)
+            if (distance > MinSpawnDistance && Mathf.Abs(cell.x - start.x) + Mathf.Abs(cell.y - start.y) > MinSpawnDistance && cell != level.Exit)
             {
                 result.Add(cell);
                 if (result.Count == needed) return;

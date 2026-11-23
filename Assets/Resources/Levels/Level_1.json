@@ -1272,21 +1272,6 @@
         },
         {
             "cell": {
-                "x": 5,
-                "y": 0
-            },
-            "element": 10,
-            "scale": 1.0,
-            "hasBakedOccupancy": true,
-            "occupiedCells": [
-                {
-                    "x": 0,
-                    "y": 0
-                }
-            ]
-        },
-        {
-            "cell": {
                 "x": 6,
                 "y": 0
             },
@@ -1573,21 +1558,6 @@
         {
             "cell": {
                 "x": 6,
-                "y": 11
-            },
-            "element": 10,
-            "scale": 1.0,
-            "hasBakedOccupancy": true,
-            "occupiedCells": [
-                {
-                    "x": 0,
-                    "y": 0
-                }
-            ]
-        },
-        {
-            "cell": {
-                "x": 5,
                 "y": 11
             },
             "element": 10,
@@ -2286,6 +2256,14 @@
             },
             "blocked": false,
             "blocksSight": false
+        },
+        {
+            "cell": {
+                "x": 4,
+                "y": 1
+            },
+            "blocked": false,
+            "blocksSight": false
         }
     ],
     "slimeCount": 1,
@@ -2346,5 +2324,17 @@
             "quality": 2,
             "depth": 5
         }
-    ]
+    ],
+    "entrance": {
+        "x": 5,
+        "y": 0
+    },
+    "exit": {
+        "x": 5,
+        "y": 11
+    },
+    "entranceDoor": 51,
+    "exitDoor": 51,
+    "entranceScale": 1.4049279689788819,
+    "exitScale": 1.4049279689788819
 }

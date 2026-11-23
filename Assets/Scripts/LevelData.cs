@@ -48,6 +48,43 @@ public sealed class LevelData : ScriptableObject, ISerializationCallbackReceiver
     public int SlimeCount => Mathf.Max(0, slimeCount);
     public int WolfCount => Mathf.Max(0, wolfCount);
     public int Height => height;
+    [SerializeField] private Vector2Int entrance;
+    [SerializeField] private Vector2Int exit = new Vector2Int(-1, -1);
+    [SerializeField] private GeologyElement entranceDoor = GeologyElement.DoorHorizontal;
+    [SerializeField] private GeologyElement exitDoor = GeologyElement.DoorVertical;
+    private Vector2Int LastCell => new Vector2Int(width - 1, height - 1);
+    public Vector2Int Entrance => Vector2Int.Min(Vector2Int.Max(entrance, Vector2Int.zero), LastCell);
+    public Vector2Int Exit
+    {
+        get
+        {
+            var candidate = ContainsCell(exit) ? exit : LastCell;
+            return candidate != Entrance ? candidate : Entrance == Vector2Int.zero ? LastCell : Vector2Int.zero;
+        }
+    }
+    public GeologyElement EntranceDoor => entranceDoor;
+    public GeologyElement ExitDoor => exitDoor;
+    [SerializeField] private float entranceScale = 1f;
+    [SerializeField] private float exitScale = 1f;
+    public float DoorScale(bool isExit)
+    {
+        float value = isExit ? exitScale : entranceScale;
+        return value > 0f ? value : 1f;
+    }
+    public void SetDoorScale(bool isExit, float value)
+    {
+        if (isExit) exitScale = value;
+        else entranceScale = value;
+    }
+
+    public bool PlaceDoor(bool isExit, Vector2Int cell, GeologyElement door)
+    {
+        if (!ContainsCell(cell) || !GameDataConfig.IsDoor((int)door) || cell == (isExit ? Entrance : Exit)) return false;
+        var other = isExit ? Entrance : Exit;
+        if (isExit) { entrance = other; exit = cell; exitDoor = door; }
+        else { exit = other; entrance = cell; entranceDoor = door; }
+        return true;
+    }
     public IReadOnlyList<ElementPlacement> SceneElements => sceneElements;
 
     public static LevelData FromJson(string json, string levelName)
@@ -197,6 +234,7 @@ public sealed class LevelData : ScriptableObject, ISerializationCallbackReceiver
         bool vertical = direction.x == 0 && (direction.y == -1 || direction.y == 1);
         int size = horizontal ? width : height;
         int newSize = size + change;
+        if (newSize == 1 && (horizontal ? height : width) == 1) return false;
         if ((!horizontal && !vertical) || newSize < GameDataConfig.MinLevelGridSize ||
             newSize > GameDataConfig.MaxLevelGridSize)
             return false;
@@ -239,6 +277,10 @@ public sealed class LevelData : ScriptableObject, ISerializationCallbackReceiver
                 chestPlacements[i] = new ChestPlacement(placement.Cell + shift, placement.Quality, placement.Depth);
         }
 
+        var oldEntrance = Entrance;
+        var oldExit = Exit;
+        entrance = oldEntrance + ((horizontal ? oldEntrance.x : oldEntrance.y) >= edge ? shift : Vector2Int.zero);
+        exit = oldExit + ((horizontal ? oldExit.x : oldExit.y) >= edge ? shift : Vector2Int.zero);
         width += shift.x;
         height += shift.y;
         return true;
@@ -404,6 +446,7 @@ public sealed class LevelData : ScriptableObject, ISerializationCallbackReceiver
 
     public bool IsCellWalkableIgnoring(Vector2Int cell, SceneElement ignoredElement)
     {
+        if (cell == Entrance || cell == Exit) return true;
         if (!ContainsCell(cell))
             return false;
 
@@ -499,6 +542,7 @@ public sealed class LevelData : ScriptableObject, ISerializationCallbackReceiver
         manualOccupancyIndices = null;
         width = Mathf.Clamp(width, GameDataConfig.MinLevelGridSize, GameDataConfig.MaxLevelGridSize);
         height = Mathf.Clamp(height, GameDataConfig.MinLevelGridSize, GameDataConfig.MaxLevelGridSize);
+        if (width == 1 && height == 1) width = 2;
     }
 
     void ISerializationCallbackReceiver.OnBeforeSerialize()
